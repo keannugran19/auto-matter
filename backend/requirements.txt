@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+lxml
+pydantic>=2
+python-multipart
+pytest
+pytest-cov
+httpx
