@@ -9,6 +9,8 @@ interface DropZoneProps {
     file: File | null;
     onFileSelect: (file: File | null) => void;
     disabled?: boolean;
+    isDefault?: boolean;
+    onToggleDefault?: (checked: boolean) => void;
 }
 
 export default function DropZone({
@@ -18,6 +20,8 @@ export default function DropZone({
     file,
     onFileSelect,
     disabled = false,
+    isDefault = false,
+    onToggleDefault,
 }: DropZoneProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -137,6 +141,43 @@ export default function DropZone({
                         <p className="text-xs text-slate-400 mt-0.5">
                             {formatFileSize(file.size)}
                         </p>
+
+                        {side === "reference" && isDefault && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 mt-2 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <svg
+                                    className="w-3 h-3 text-emerald-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2.5"
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                                Saved Default
+                            </span>
+                        )}
+
+                        {side === "reference" && onToggleDefault && (
+                            <label
+                                onClick={(e) => e.stopPropagation()}
+                                className="mt-3 inline-flex items-center gap-2 cursor-pointer select-none text-xs text-slate-600 hover:text-slate-900"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={isDefault}
+                                    onChange={(e) =>
+                                        onToggleDefault(e.target.checked)
+                                    }
+                                    disabled={disabled}
+                                    className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                />
+                                <span>Remember as default reference document</span>
+                            </label>
+                        )}
 
                         {!disabled && (
                             <button

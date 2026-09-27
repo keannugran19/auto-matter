@@ -4,6 +4,11 @@ import React, { useEffect, useState } from "react";
 import DropZone from "./components/DropZone";
 import PreviewPane from "./components/PreviewPane";
 import ChangeReport, { ChangeReportData } from "./components/ChangeReport";
+import {
+    getDefaultReference,
+    saveDefaultReference,
+    clearDefaultReference,
+} from "./utils/referenceStorage";
 
 interface JobResponse {
     status: "queued" | "running" | "done" | "error";
@@ -19,6 +24,7 @@ interface JobResponse {
 export default function Home() {
     const [targetFile, setTargetFile] = useState<File | null>(null);
     const [referenceFile, setReferenceFile] = useState<File | null>(null);
+    const [isDefaultReference, setIsDefaultReference] = useState<boolean>(true);
 
     const [apiKey, setApiKey] = useState<string>("");
     const [showApiKey, setShowApiKey] = useState<boolean>(false);
@@ -30,12 +36,18 @@ export default function Home() {
     const [jobData, setJobData] = useState<JobResponse | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    // Initialize API key from localStorage if available
+    // Initialize API key and default reference document
     useEffect(() => {
         const saved = localStorage.getItem("gemini_api_key");
         if (saved) {
             setApiKey(saved);
         }
+        getDefaultReference().then((savedRef) => {
+            if (savedRef) {
+                setReferenceFile(savedRef);
+                setIsDefaultReference(true);
+            }
+        });
     }, []);
 
     const handleApiKeyChange = (val: string) => {
@@ -44,6 +56,27 @@ export default function Home() {
             localStorage.setItem("gemini_api_key", val.trim());
         } else {
             localStorage.removeItem("gemini_api_key");
+        }
+    };
+
+    const handleReferenceSelect = (file: File | null) => {
+        setReferenceFile(file);
+        if (!file) {
+            clearDefaultReference();
+            setIsDefaultReference(true);
+        } else if (isDefaultReference) {
+            saveDefaultReference(file);
+        }
+    };
+
+    const handleToggleDefault = (checked: boolean) => {
+        setIsDefaultReference(checked);
+        if (checked) {
+            if (referenceFile) {
+                saveDefaultReference(referenceFile);
+            }
+        } else {
+            clearDefaultReference();
         }
     };
 
@@ -130,7 +163,9 @@ export default function Home() {
             fetch(`/api/jobs/${jobId}`, { method: "DELETE" }).catch(() => {});
         }
         setTargetFile(null);
-        setReferenceFile(null);
+        if (!isDefaultReference) {
+            setReferenceFile(null);
+        }
         setJobId(null);
         setJobStatus("idle");
         setJobData(null);
@@ -212,8 +247,10 @@ export default function Home() {
                                     label="Select the reference style document"
                                     sublabel="Fonts, sizes, line spacing, margins, and lists will be copied"
                                     file={referenceFile}
-                                    onFileSelect={setReferenceFile}
+                                    onFileSelect={handleReferenceSelect}
                                     disabled={isProcessing}
+                                    isDefault={isDefaultReference}
+                                    onToggleDefault={handleToggleDefault}
                                 />
                             </div>
                         </div>
