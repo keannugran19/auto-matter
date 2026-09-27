@@ -1,3 +1,5 @@
+<!-- spec-version: 1.0.0 | last-reviewed: 2026-09-27 -->
+
 # DOCX Format Transfer — Build Spec
 
 A two-pane web app. The user uploads a Word document on the left (the **target** — the one to be
@@ -14,15 +16,15 @@ starting each phase.
 
 These were decided deliberately. Do not silently revisit them.
 
-| Decision | Value | Why |
-|---|---|---|
-| Input types | DOCX target + DOCX reference **only** | A DOCX reference exposes exact formatting values. A PDF reference would require back-calculating font sizes from glyph advance widths — fragile, and dead on scanned files. |
-| Role detection | LLM classifies every paragraph | Many real documents have no named styles at all — formatted by hand with direct bold/size. There is no structural signal to key off. |
-| Output method | **Restyle the original in place** | Rebuilding from an extracted content model silently destroys images, tables, footnotes, and hyperlink relationships. Unacceptable in a product. |
-| Deviation doctrine | **Literal fidelity, with warnings** | Apply the reference's values exactly. If a value will likely overflow (e.g. a 42 pt title on a long heading), flag it in the change report rather than quietly adapting. A fit-aware mode may be added later as an explicit toggle. |
-| Structure changes | **Out of scope** | The app makes the target's headings *look* like the reference's headings. It does not invent the reference's outline hierarchy (A / 1 / a) where the target has none. That is a content edit, not a formatting copy. |
-| v1 auth/persistence | None | Upload, convert, download, delete. |
-| Table interiors | Left alone in v1 | Restyling text inside table cells risks breaking column layouts. Surface it in the change report instead. |
+| Decision            | Value                                 | Why                                                                                                                                                                                                                                 |
+| ------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Input types         | DOCX target + DOCX reference **only** | A DOCX reference exposes exact formatting values. A PDF reference would require back-calculating font sizes from glyph advance widths — fragile, and dead on scanned files.                                                         |
+| Role detection      | LLM classifies every paragraph        | Many real documents have no named styles at all — formatted by hand with direct bold/size. There is no structural signal to key off.                                                                                                |
+| Output method       | **Restyle the original in place**     | Rebuilding from an extracted content model silently destroys images, tables, footnotes, and hyperlink relationships. Unacceptable in a product.                                                                                     |
+| Deviation doctrine  | **Literal fidelity, with warnings**   | Apply the reference's values exactly. If a value will likely overflow (e.g. a 42 pt title on a long heading), flag it in the change report rather than quietly adapting. A fit-aware mode may be added later as an explicit toggle. |
+| Structure changes   | **Out of scope**                      | The app makes the target's headings _look_ like the reference's headings. It does not invent the reference's outline hierarchy (A / 1 / a) where the target has none. That is a content edit, not a formatting copy.                |
+| v1 auth/persistence | None                                  | Upload, convert, download, delete.                                                                                                                                                                                                  |
+| Table interiors     | Left alone in v1                      | Restyling text inside table cells risks breaking column layouts. Surface it in the change report instead.                                                                                                                           |
 
 ---
 
@@ -36,6 +38,7 @@ These were decided deliberately. Do not silently revisit them.
   intent. Preserved untouched.
 
 Get this wrong in either direction and the app fails visibly:
+
 - Fail to strip direct presentation formatting → the new styles don't apply, because direct
   formatting wins over styles in Word's resolution order. The document looks unchanged.
 - Strip run-level emphasis → the document loses its bold and italics. Content damage.
@@ -56,9 +59,9 @@ target.docx ────┘                                                     
 target.docx ─────────────────────────────────────────────────────▶ [5] patch in place ─▶ output.docx
 ```
 
-**[1] Resolve** — compute the *effective* formatting of every paragraph in both documents.
+**[1] Resolve** — compute the _effective_ formatting of every paragraph in both documents.
 **[2] Digest** — reduce each document to one compact line per paragraph.
-**[3] Classify** — one LLM call labels paragraphs in *both* documents against one shared taxonomy.
+**[3] Classify** — one LLM call labels paragraphs in _both_ documents against one shared taxonomy.
 **[4] Derive spec** — for each role, aggregate the reference paragraphs carrying that role into a
 single formatting specification.
 **[5] Patch** — modify the target's XML in place: sanitise, apply styles, rewrite section properties.
@@ -98,12 +101,12 @@ runs: [ {text, bold, italic, underline, strike, vert_align} ]
 
 ### Units — get these right
 
-| Property | Unit | Note |
-|---|---|---|
-| `w:sz`, `w:szCs` | half-points | 22 pt → `44` |
-| `w:spacing`, `w:ind` | twips (1/20 pt, aka DXA) | 1 inch → `1440`, 0.5 inch → `720` |
-| `w:line` with `lineRule="auto"` | 240ths | single → `240`, 1.5 lines → `360`, double → `480` |
-| `w:pgSz` | twips | Letter `12240×15840`, Legal `12240×20160`, A4 `11906×16838` |
+| Property                        | Unit                     | Note                                                        |
+| ------------------------------- | ------------------------ | ----------------------------------------------------------- |
+| `w:sz`, `w:szCs`                | half-points              | 22 pt → `44`                                                |
+| `w:spacing`, `w:ind`            | twips (1/20 pt, aka DXA) | 1 inch → `1440`, 0.5 inch → `720`                           |
+| `w:line` with `lineRule="auto"` | 240ths                   | single → `240`, 1.5 lines → `360`, double → `480`           |
+| `w:pgSz`                        | twips                    | Letter `12240×15840`, Legal `12240×20160`, A4 `11906×16838` |
 
 ---
 
@@ -153,6 +156,7 @@ footer_note      source/attribution line at the end
 ```
 
 Requirements:
+
 - Structured output, schema-constrained, temperature 0.
 - Validate every returned label against the enum. Unrecognised → `body`. Never trust raw output.
 - Cache by SHA-256 of file bytes. Same inputs → same result, free on repeat.
@@ -181,6 +185,7 @@ one oddly-formatted outlier.
 Also extract section-level settings once: page size, margins, and whether headers/footers exist.
 
 **Roles in the target with no reference example** need explicit fallbacks:
+
 - `heading_3` missing → derive from `heading_2`, or from `heading_1` if that's absent
 - `quote` missing → `body` plus italic
 - Anything else unresolvable → `body`, and record it in the change report as unmatched
@@ -202,7 +207,8 @@ Remove these from **direct** formatting (the app takes ownership):
 `w:vertAlign`, `w:smallCaps`, `w:highlight`.
 
 Judgment calls, decide once and document:
-- `w:u` — both emphasis *and* a heading device. Preserve it on runs; let the role spec add underline
+
+- `w:u` — both emphasis _and_ a heading device. Preserve it on runs; let the role spec add underline
   at paragraph level where the reference's role has it.
 - `w:color` — treat as presentation (strip) unless the reference role specifies a colour.
 - `w:rStyle` — **never strip blindly.** `Hyperlink`, `CommentReference`, and `FootnoteReference`
@@ -210,10 +216,11 @@ Judgment calls, decide once and document:
 
 ### 8b. Element order is mandatory
 
-The schema enforces child order. Word may reject or silently drop a malformed block. *(I hit exactly
-this: I emitted `w:u` before `w:sz` and had to reorder.)*
+The schema enforces child order. Word may reject or silently drop a malformed block. _(I hit exactly
+this: I emitted `w:u` before `w:sz` and had to reorder.)_
 
 `w:rPr` order:
+
 ```
 rStyle, rFonts, b, bCs, i, iCs, caps, smallCaps, strike, dstrike, outline, shadow,
 emboss, imprint, noProof, snapToGrid, vanish, webHidden, color, spacing, w, kern,
@@ -222,6 +229,7 @@ em, lang, eastAsianLayout, specVanish, oMath
 ```
 
 `w:pPr` order:
+
 ```
 pStyle, keepNext, keepLines, pageBreakBefore, framePr, widowControl, numPr,
 suppressLineNumbers, pBdr, shd, tabs, suppressAutoHyphens, kinsoku, wordWrap,
@@ -251,13 +259,13 @@ is harmless; deleting them means also cleaning `document.xml.rels` and `[Content
 The messiest part. Numbering definitions live in `numbering.xml` with document-scoped IDs, so the
 reference's `numId` is meaningless in the target. You must copy the `w:abstractNum` and `w:num`
 definitions across and remap IDs to avoid collisions. If the target has no `numbering.xml` at all,
-create the part *and* add its relationship *and* its `[Content_Types].xml` override. Budget real
+create the part _and_ add its relationship _and_ its `[Content_Types].xml` override. Budget real
 time here.
 
 ### 8f. Do not touch
 
 Tracked changes (`w:ins`, `w:del`), comments, `w:drawing` / image relationships, tables (structure
-*and*, in v1, interior text), footnotes, endnotes, bookmarks.
+_and_, in v1, interior text), footnotes, endnotes, bookmarks.
 
 ---
 
@@ -360,19 +368,19 @@ pipeline — it has a known-good answer.
 
 Expected derived spec:
 
-| Property | Value |
-|---|---|
-| Page size | Legal, 12240 × 20160 twips |
-| Margins | 720 twips (0.5 in) all four sides |
-| Font | Times New Roman throughout |
-| Body size | 44 half-points (22 pt) |
-| Line spacing | `w:line="360" w:lineRule="auto"` (1.5 lines) |
-| Space after | 160 twips (8 pt) |
-| Alignment | justified (`w:jc val="both"`) |
-| First-line indent | 720 twips (0.5 in) |
-| Headings | bold, flush left, ~400 twips space before |
-| Quote blocks | italic, first-line indented, justified |
-| Header/footer | none |
+| Property          | Value                                        |
+| ----------------- | -------------------------------------------- |
+| Page size         | Legal, 12240 × 20160 twips                   |
+| Margins           | 720 twips (0.5 in) all four sides            |
+| Font              | Times New Roman throughout                   |
+| Body size         | 44 half-points (22 pt)                       |
+| Line spacing      | `w:line="360" w:lineRule="auto"` (1.5 lines) |
+| Space after       | 160 twips (8 pt)                             |
+| Alignment         | justified (`w:jc val="both"`)                |
+| First-line indent | 720 twips (0.5 in)                           |
+| Headings          | bold, flush left, ~400 twips space before    |
+| Quote blocks      | italic, first-line indented, justified       |
+| Header/footer     | none                                         |
 
 Also assert: the original's hyperlink relationships still resolve in the output, and no
 `word/media/*` entry is lost.
@@ -389,7 +397,7 @@ unchanged before it changes anything.
 
 1. Docker image with LibreOffice + Poppler; confirm headless conversion works
 2. `constants.py`, `package.py` — read a docx, list parts, write it back **byte-identical**
-3. `resolver.py` + unit tests against both fixtures ← *the hard part, do it properly*
+3. `resolver.py` + unit tests against both fixtures ← _the hard part, do it properly_
 4. `inventory.py` + digest snapshot tests
 5. `fallback.py` (so there's a working classifier before any API dependency)
 6. `spec.py` — derive the spec from the reference; assert it matches the §12 table
