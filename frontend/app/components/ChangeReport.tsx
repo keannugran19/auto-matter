@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 export interface ChangeReportData {
     sectionChanges?: {
@@ -34,24 +34,105 @@ export interface ChangeReportData {
 interface ChangeReportProps {
     report: ChangeReportData;
     downloadUrl?: string;
+    downloadPdfUrl?: string;
+    targetName?: string;
     onReset: () => void;
 }
 
 export default function ChangeReport({
     report,
     downloadUrl,
+    downloadPdfUrl,
+    targetName,
     onReset,
 }: ChangeReportProps) {
     const roles = report.roles || [];
     const warnings = report.warnings || [];
     const totalParagraphs = roles.reduce((sum, r) => sum + r.paragraphCount, 0);
 
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [isDownloading, setIsDownloading] = useState<"docx" | "pdf" | null>(
+        null,
+    );
+    const [downloadError, setDownloadError] = useState<string | null>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
+                setDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
     const formatRoleName = (role: string) => {
         return role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     };
 
+    const handleDownload = async (format: "docx" | "pdf") => {
+        const url =
+            format === "pdf"
+                ? downloadPdfUrl || `${downloadUrl}?format=pdf`
+                : downloadUrl;
+        if (!url) return;
+
+        const baseStem = targetName
+            ? targetName.replace(/\.[^/.]+$/, "")
+            : "restyled";
+        const filename = `${baseStem}.${format}`;
+
+        try {
+            setIsDownloading(format);
+            setDownloadError(null);
+            const res = await fetch(url);
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(
+                    errData.error ||
+                        errData.detail ||
+                        `Download failed with HTTP ${res.status}`,
+                );
+            }
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+        } catch (err: any) {
+            console.error("Download error:", err);
+            setDownloadError(err.message || "Failed to download file.");
+        } finally {
+            setIsDownloading(null);
+        }
+    };
+
     return (
         <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
+            {/* Download error banner */}
+            {downloadError && (
+                <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center justify-between">
+                    <span>{downloadError}</span>
+                    <button
+                        type="button"
+                        onClick={() => setDownloadError(null)}
+                        className="ml-3 font-bold hover:text-red-900"
+                        aria-label="Dismiss error"
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
+
             {/* Top Header & Actions */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
                 <div>
@@ -92,26 +173,153 @@ export default function ChangeReport({
                         New Transfer
                     </button>
                     {downloadUrl && (
-                        <a
-                            href={downloadUrl}
-                            download="restyled.docx"
-                            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm hover:shadow transition-all"
+                        <div
+                            className="relative inline-flex items-center rounded-xl shadow-sm"
+                            ref={dropdownRef}
                         >
-                            <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                            <button
+                                type="button"
+                                disabled={isDownloading !== null}
+                                onClick={() => handleDownload("docx")}
+                                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 rounded-l-xl transition-all"
                             >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                />
-                            </svg>
-                            Download Restyled DOCX
-                        </a>
+                                {isDownloading === "docx" ? (
+                                    <svg
+                                        className="w-4 h-4 animate-spin text-white"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        />
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        />
+                                    </svg>
+                                ) : (
+                                    <svg
+                                        className="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                        />
+                                    </svg>
+                                )}
+                                Save as DOCX
+                            </button>
+                            <button
+                                type="button"
+                                disabled={isDownloading !== null}
+                                onClick={() => setDropdownOpen((prev) => !prev)}
+                                aria-label="Export format options"
+                                aria-haspopup="true"
+                                aria-expanded={dropdownOpen}
+                                className="inline-flex items-center justify-center px-2.5 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 border-l border-emerald-500 disabled:opacity-60 rounded-r-xl transition-all"
+                            >
+                                <svg
+                                    className={`w-4 h-4 transition-transform duration-200 ${
+                                        dropdownOpen ? "rotate-180" : ""
+                                    }`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M19 9l-7 7-7-7"
+                                    />
+                                </svg>
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {dropdownOpen && (
+                                <div className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-30">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setDropdownOpen(false);
+                                            handleDownload("docx");
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                                    >
+                                        <svg
+                                            className="w-4 h-4 text-blue-600 flex-shrink-0"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                            />
+                                        </svg>
+                                        Save as DOCX
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setDropdownOpen(false);
+                                            handleDownload("pdf");
+                                        }}
+                                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                                    >
+                                        {isDownloading === "pdf" ? (
+                                            <svg
+                                                className="w-4 h-4 animate-spin text-red-500 flex-shrink-0"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                />
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                />
+                                            </svg>
+                                        ) : (
+                                            <svg
+                                                className="w-4 h-4 text-red-500 flex-shrink-0"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                                                />
+                                            </svg>
+                                        )}
+                                        Save as PDF
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
             </div>
