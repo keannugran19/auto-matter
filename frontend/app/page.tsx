@@ -28,6 +28,7 @@ export default function Home() {
 
     const [apiKey, setApiKey] = useState<string>("");
     const [showApiKey, setShowApiKey] = useState<boolean>(false);
+    const [rememberApiKey, setRememberApiKey] = useState<boolean>(true);
 
     const [jobId, setJobId] = useState<string | null>(null);
     const [jobStatus, setJobStatus] = useState<
@@ -38,9 +39,15 @@ export default function Home() {
 
     // Initialize API key and default reference document
     useEffect(() => {
-        const saved = localStorage.getItem("gemini_api_key");
-        if (saved) {
-            setApiKey(saved);
+        const savedRemember = localStorage.getItem("remember_gemini_api_key");
+        const shouldRemember = savedRemember !== "false";
+        setRememberApiKey(shouldRemember);
+
+        if (shouldRemember) {
+            const saved = localStorage.getItem("gemini_api_key");
+            if (saved) {
+                setApiKey(saved);
+            }
         }
         getDefaultReference().then((savedRef) => {
             if (savedRef) {
@@ -52,8 +59,22 @@ export default function Home() {
 
     const handleApiKeyChange = (val: string) => {
         setApiKey(val);
-        if (val.trim()) {
-            localStorage.setItem("gemini_api_key", val.trim());
+        if (rememberApiKey) {
+            if (val.trim()) {
+                localStorage.setItem("gemini_api_key", val.trim());
+            } else {
+                localStorage.removeItem("gemini_api_key");
+            }
+        }
+    };
+
+    const handleToggleRememberApiKey = (checked: boolean) => {
+        setRememberApiKey(checked);
+        localStorage.setItem("remember_gemini_api_key", String(checked));
+        if (checked) {
+            if (apiKey.trim()) {
+                localStorage.setItem("gemini_api_key", apiKey.trim());
+            }
         } else {
             localStorage.removeItem("gemini_api_key");
         }
@@ -274,55 +295,72 @@ export default function Home() {
                                         fallback will be used.
                                     </p>
                                 </div>
-                                <div className="flex items-center gap-2 w-full sm:w-80">
-                                    <div className="relative flex-1">
+                                <div className="flex flex-col gap-2 w-full sm:w-80">
+                                    <div className="flex items-center gap-2">
+                                        <div className="relative flex-1">
+                                            <input
+                                                type={
+                                                    showApiKey
+                                                        ? "text"
+                                                        : "password"
+                                                }
+                                                value={apiKey}
+                                                onChange={(e) =>
+                                                    handleApiKeyChange(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                placeholder="Paste Google API key (optional)"
+                                                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 pr-12 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-mono"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setShowApiKey(!showApiKey)
+                                                }
+                                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[11px] font-medium"
+                                            >
+                                                {showApiKey ? "Hide" : "Show"}
+                                            </button>
+                                        </div>
+                                        {apiKey && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleApiKeyChange("")
+                                                }
+                                                className="p-2 text-slate-400 hover:text-red-500 rounded-xl hover:bg-slate-50 transition-colors"
+                                                title="Clear API key"
+                                            >
+                                                <svg
+                                                    className="w-4 h-4"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth="2"
+                                                        d="M6 18L18 6M6 6l12 12"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                    <label className="inline-flex items-center gap-2 cursor-pointer select-none text-[11px] text-slate-500 hover:text-slate-700">
                                         <input
-                                            type={
-                                                showApiKey ? "text" : "password"
-                                            }
-                                            value={apiKey}
+                                            type="checkbox"
+                                            checked={rememberApiKey}
                                             onChange={(e) =>
-                                                handleApiKeyChange(
-                                                    e.target.value,
+                                                handleToggleRememberApiKey(
+                                                    e.target.checked,
                                                 )
                                             }
-                                            placeholder="Paste Google API key (optional)"
-                                            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 pr-12 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all font-mono"
+                                            className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                         />
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setShowApiKey(!showApiKey)
-                                            }
-                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-[11px] font-medium"
-                                        >
-                                            {showApiKey ? "Hide" : "Show"}
-                                        </button>
-                                    </div>
-                                    {apiKey && (
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleApiKeyChange("")
-                                            }
-                                            className="p-2 text-slate-400 hover:text-red-500 rounded-xl hover:bg-slate-50 transition-colors"
-                                            title="Clear API key"
-                                        >
-                                            <svg
-                                                className="w-4 h-4"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth="2"
-                                                    d="M6 18L18 6M6 6l12 12"
-                                                />
-                                            </svg>
-                                        </button>
-                                    )}
+                                        <span>Remember API key in browser</span>
+                                    </label>
                                 </div>
                             </div>
                         </div>
