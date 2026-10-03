@@ -1,6 +1,15 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import {
+    FileText,
+    UploadCloud,
+    CheckCircle2,
+    Trash2,
+    AlertCircle,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface DropZoneProps {
     label: string;
@@ -78,21 +87,26 @@ export default function DropZone({
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-3">
                 <div>
-                    <span
-                        className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full uppercase tracking-wider ${
-                            isTarget
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-indigo-100 text-indigo-800"
-                        }`}
-                    >
-                        {isTarget ? "Target Document" : "Reference Document"}
-                    </span>
-                    <h3 className="text-base font-medium text-slate-800 mt-1">
+                    <div className="flex items-center gap-2">
+                        <Badge
+                            variant="secondary"
+                            className={`text-xs font-semibold uppercase tracking-wider ${
+                                isTarget
+                                    ? "text-warning"
+                                    : "text-primary"
+                            }`}
+                        >
+                            {isTarget
+                                ? "1 · Target Document"
+                                : "2 · Reference Style Template"}
+                        </Badge>
+                    </div>
+                    <h3 className="text-base font-semibold text-foreground mt-1.5">
                         {label}
                     </h3>
-                    <p className="text-xs text-slate-500">{sublabel}</p>
+                    <p className="text-xs text-muted-foreground">{sublabel}</p>
                 </div>
             </div>
 
@@ -101,12 +115,12 @@ export default function DropZone({
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => !file && !disabled && inputRef.current?.click()}
-                className={`relative flex-1 min-h-[220px] rounded-xl border-2 border-dashed transition-all flex flex-col items-center justify-center p-6 text-center ${
+                className={`relative flex-1 min-h-[200px] sm:min-h-[220px] rounded-xl border-2 transition-all flex flex-col items-center justify-center p-6 text-center ${
                     isDragging
-                        ? "border-indigo-500 bg-indigo-50/50 scale-[1.01]"
+                        ? "border-accent bg-primary-soft border-solid"
                         : file
-                          ? "border-slate-200 bg-white shadow-sm"
-                          : "border-slate-300 bg-slate-50/50 hover:bg-slate-100/50 hover:border-slate-400 cursor-pointer"
+                          ? "border-border bg-card shadow-sm border-solid"
+                          : "border-dashed border-border-strong bg-card hover:bg-muted/50 hover:border-primary/60 cursor-pointer"
                 } ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
             >
                 <input
@@ -135,36 +149,27 @@ export default function DropZone({
                                 />
                             </svg>
                         </div>
-                        <p className="text-sm font-semibold text-slate-800 break-all max-w-[90%]">
+                        <p className="text-sm font-semibold text-foreground break-all max-w-[90%]">
                             {file.name}
                         </p>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
                             {formatFileSize(file.size)}
                         </p>
 
                         {side === "reference" && isDefault && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 mt-2 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                <svg
-                                    className="w-3 h-3 text-emerald-600"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2.5"
-                                        d="M5 13l4 4L19 7"
-                                    />
-                                </svg>
-                                Saved Default
-                            </span>
+                            <Badge
+                                variant="ok"
+                                className="mt-2 text-xs font-medium"
+                            >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Saved Default Template</span>
+                            </Badge>
                         )}
 
                         {side === "reference" && onToggleDefault && (
                             <label
                                 onClick={(e) => e.stopPropagation()}
-                                className="mt-3 inline-flex items-center gap-2 cursor-pointer select-none text-xs text-slate-600 hover:text-slate-900"
+                                className="mt-3 inline-flex items-center gap-2 cursor-pointer select-none text-xs text-muted-foreground hover:text-foreground"
                             >
                                 <input
                                     type="checkbox"
@@ -173,83 +178,67 @@ export default function DropZone({
                                         onToggleDefault(e.target.checked)
                                     }
                                     disabled={disabled}
-                                    className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                    className="w-4 h-4 rounded border-border-strong text-primary focus:ring-ring cursor-pointer"
                                 />
-                                <span>Remember as default reference document</span>
+                                <span>
+                                    Remember as default reference document
+                                </span>
                             </label>
                         )}
 
                         {!disabled && (
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onFileSelect(null);
-                                    if (inputRef.current)
-                                        inputRef.current.value = "";
-                                }}
-                                className="mt-4 px-3 py-1 text-xs font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors flex items-center gap-1"
-                            >
-                                <svg
-                                    className="w-3.5 h-3.5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                            <div className="mt-4 flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        inputRef.current?.click();
+                                    }}
+                                    className="text-primary hover:bg-primary-soft hover:text-primary-hover"
                                 >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                </svg>
-                                Remove file
-                            </button>
+                                    Replace file
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onFileSelect(null);
+                                        if (inputRef.current)
+                                            inputRef.current.value = "";
+                                    }}
+                                    className="text-destructive hover:bg-destructive-soft hover:text-destructive flex items-center gap-1"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>Remove</span>
+                                </Button>
+                            </div>
                         )}
                     </div>
                 ) : (
                     <div className="flex flex-col items-center">
-                        <div className="w-12 h-12 rounded-xl bg-slate-200/70 text-slate-500 flex items-center justify-center mb-3">
-                            <svg
-                                className="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                />
-                            </svg>
+                        <div className="w-12 h-12 rounded-xl bg-primary-soft text-primary flex items-center justify-center mb-3 shadow-xs">
+                            <UploadCloud className="w-6 h-6" />
                         </div>
-                        <p className="text-sm font-medium text-slate-700">
+                        <p className="text-sm font-medium text-foreground">
                             Drag & drop a{" "}
-                            <span className="font-semibold">.docx</span> file
-                            here
+                            <span className="font-semibold text-primary">
+                                .docx
+                            </span>{" "}
+                            file here
                         </p>
-                        <p className="text-xs text-slate-400 mt-1">
-                            or click to browse from computer
+                        <p className="text-xs text-muted-foreground mt-1">
+                            or tap to browse from device
                         </p>
                     </div>
                 )}
 
                 {error && (
-                    <div className="absolute bottom-2 left-4 right-4 bg-red-50 text-red-700 border border-red-200 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5">
-                        <svg
-                            className="w-4 h-4 shrink-0 text-red-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        </svg>
+                    <div className="absolute bottom-2 left-4 right-4 bg-destructive-soft text-destructive border border-destructive/20 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
                         <span>{error}</span>
                     </div>
                 )}

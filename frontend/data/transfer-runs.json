@@ -1,0 +1,405 @@
+[
+  {
+    "id": "run-mus4hb45",
+    "targetFile": "climatechangem.docx",
+    "referenceTemplateId": "onelife-reference-v3.docx",
+    "referenceFileName": "onelife-reference-v3.docx",
+    "classifier": "gemini",
+    "status": "complete",
+    "stats": {
+      "paragraphs": 41,
+      "rolesTransferred": 10,
+      "fromReference": 7,
+      "fromFallback": 3,
+      "geometryMatched": true
+    },
+    "warnings": [
+      "heading_3 missing in reference; derived from heading_1",
+      "reference_line unresolvable in reference; defaulted to body",
+      "definition_term unresolvable in reference; defaulted to body"
+    ],
+    "roleMap": [
+      {
+        "role": "body",
+        "label": "Body",
+        "paragraphs": 16,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "alignment": "Justified",
+        "spacing": "After 0 pt",
+        "source": "reference"
+      },
+      {
+        "role": "heading_3",
+        "label": "Heading 3",
+        "paragraphs": 9,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "alignment": "Justified",
+        "spacing": "Before 18 pt",
+        "source": "fallback"
+      },
+      {
+        "role": "list_item",
+        "label": "List item",
+        "paragraphs": 6,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "italic": true,
+        "alignment": "Justified",
+        "spacing": "Before 20.6 pt",
+        "source": "reference"
+      },
+      {
+        "role": "scripture",
+        "label": "Scripture quote",
+        "paragraphs": 4,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "italic": true,
+        "alignment": "Justified",
+        "spacing": "After 6 pt",
+        "source": "reference"
+      },
+      {
+        "role": "title",
+        "label": "Lesson title",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 36,
+        "bold": true,
+        "alignment": "Left",
+        "spacing": "After 12 pt",
+        "source": "reference"
+      },
+      {
+        "role": "subtitle",
+        "label": "Lesson subtitle",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 20,
+        "italic": true,
+        "alignment": "Left",
+        "spacing": "After 8 pt",
+        "source": "reference"
+      },
+      {
+        "role": "objectives",
+        "label": "Objectives header",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "alignment": "Justified",
+        "spacing": "Before 14 pt",
+        "source": "reference"
+      },
+      {
+        "role": "reference_line",
+        "label": "Scripture reference",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "alignment": "Left",
+        "spacing": "Before 12 pt",
+        "source": "fallback"
+      },
+      {
+        "role": "definition_term",
+        "label": "Definition term",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "alignment": "Justified",
+        "spacing": "Before 6 pt",
+        "source": "fallback"
+      },
+      {
+        "role": "caption",
+        "label": "Caption / footnote",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 16,
+        "italic": true,
+        "alignment": "Center",
+        "spacing": "After 4 pt",
+        "source": "reference"
+      }
+    ],
+    "durationMs": 2400,
+    "createdAt": "2026-10-03T08:20:59.141Z"
+  },
+  {
+    "id": "79738e17-6b69-4208-afbd-056a1b986224",
+    "targetFile": "climatechangem.docx",
+    "referenceTemplateId": "lesson36bemaseatofChrist.docx",
+    "referenceFileName": "lesson36bemaseatofChrist.docx",
+    "classifier": "gemini",
+    "status": "complete",
+    "stats": {
+      "paragraphs": 41,
+      "rolesTransferred": 10,
+      "fromReference": 7,
+      "fromFallback": 3,
+      "geometryMatched": true
+    },
+    "warnings": [
+      "heading_3 missing in reference; derived from heading_1",
+      "reference_line unresolvable in reference; defaulted to body",
+      "definition_term unresolvable in reference; defaulted to body"
+    ],
+    "roleMap": [
+      {
+        "role": "body",
+        "label": "Body",
+        "paragraphs": 16,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "alignment": "Justified",
+        "spacing": "After 0 pt",
+        "source": "reference"
+      },
+      {
+        "role": "heading_3",
+        "label": "Heading 3",
+        "paragraphs": 9,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "alignment": "Justified",
+        "spacing": "Before 18 pt",
+        "source": "fallback"
+      },
+      {
+        "role": "list_item",
+        "label": "List item",
+        "paragraphs": 6,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "italic": true,
+        "alignment": "Justified",
+        "spacing": "Before 20.6 pt",
+        "source": "reference"
+      },
+      {
+        "role": "scripture",
+        "label": "Scripture quote",
+        "paragraphs": 4,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "italic": true,
+        "alignment": "Justified",
+        "spacing": "After 6 pt",
+        "source": "reference"
+      },
+      {
+        "role": "title",
+        "label": "Lesson title",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 36,
+        "bold": true,
+        "alignment": "Left",
+        "spacing": "After 12 pt",
+        "source": "reference"
+      },
+      {
+        "role": "subtitle",
+        "label": "Lesson subtitle",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 20,
+        "italic": true,
+        "alignment": "Left",
+        "spacing": "After 8 pt",
+        "source": "reference"
+      },
+      {
+        "role": "objectives",
+        "label": "Objectives header",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "alignment": "Justified",
+        "spacing": "Before 14 pt",
+        "source": "reference"
+      },
+      {
+        "role": "reference_line",
+        "label": "Scripture reference",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "alignment": "Left",
+        "spacing": "Before 12 pt",
+        "source": "fallback"
+      },
+      {
+        "role": "definition_term",
+        "label": "Definition term",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "alignment": "Justified",
+        "spacing": "Before 6 pt",
+        "source": "fallback"
+      },
+      {
+        "role": "caption",
+        "label": "Caption / footnote",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 16,
+        "italic": true,
+        "alignment": "Center",
+        "spacing": "After 4 pt",
+        "source": "reference"
+      }
+    ],
+    "durationMs": 2400,
+    "createdAt": "2026-10-03T07:14:37.346Z"
+  },
+  {
+    "id": "run-default-37",
+    "lessonId": "lesson-37",
+    "targetFile": "lesson37servantleadership.docx",
+    "referenceTemplateId": "ref-default-v3",
+    "referenceFileName": "onelife-reference-v3.docx",
+    "classifier": "gemini",
+    "status": "complete",
+    "stats": {
+      "paragraphs": 41,
+      "rolesTransferred": 10,
+      "fromReference": 7,
+      "fromFallback": 3,
+      "geometryMatched": true
+    },
+    "warnings": [
+      "heading_3 missing in reference; derived from heading_1",
+      "reference_line unresolvable in reference; defaulted to body",
+      "definition_term unresolvable in reference; defaulted to body"
+    ],
+    "roleMap": [
+      {
+        "role": "body",
+        "label": "Body",
+        "paragraphs": 16,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "alignment": "Justified",
+        "spacing": "After 0 pt",
+        "source": "reference"
+      },
+      {
+        "role": "heading_3",
+        "label": "Heading 3",
+        "paragraphs": 9,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "alignment": "Justified",
+        "spacing": "Before 18 pt",
+        "source": "fallback"
+      },
+      {
+        "role": "list_item",
+        "label": "List item",
+        "paragraphs": 6,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "italic": true,
+        "alignment": "Justified",
+        "spacing": "Before 20.6 pt",
+        "source": "reference"
+      },
+      {
+        "role": "scripture",
+        "label": "Scripture quote",
+        "paragraphs": 4,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "italic": true,
+        "alignment": "Justified",
+        "spacing": "After 6 pt",
+        "source": "reference"
+      },
+      {
+        "role": "title",
+        "label": "Lesson title",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 36,
+        "bold": true,
+        "alignment": "Left",
+        "spacing": "After 12 pt",
+        "source": "reference"
+      },
+      {
+        "role": "subtitle",
+        "label": "Lesson subtitle",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 20,
+        "italic": true,
+        "alignment": "Left",
+        "spacing": "After 8 pt",
+        "source": "reference"
+      },
+      {
+        "role": "objectives",
+        "label": "Objectives header",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "alignment": "Justified",
+        "spacing": "Before 14 pt",
+        "source": "reference"
+      },
+      {
+        "role": "reference_line",
+        "label": "Scripture reference",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "alignment": "Left",
+        "spacing": "Before 12 pt",
+        "source": "fallback"
+      },
+      {
+        "role": "definition_term",
+        "label": "Definition term",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 22,
+        "bold": true,
+        "alignment": "Justified",
+        "spacing": "Before 6 pt",
+        "source": "fallback"
+      },
+      {
+        "role": "caption",
+        "label": "Caption / footnote",
+        "paragraphs": 1,
+        "font": "Times New Roman",
+        "sizePt": 16,
+        "italic": true,
+        "alignment": "Center",
+        "spacing": "After 4 pt",
+        "source": "reference"
+      }
+    ],
+    "durationMs": 2400,
+    "createdAt": "2026-10-03T06:34:09.080Z"
+  }
+]
