@@ -39,19 +39,13 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
 
     // Target file
     const [targetFile, setTargetFile] = React.useState<File | null>(null);
-    const [targetFileName, setTargetFileName] = React.useState<string>(
-        "lesson37servantleadership.docx",
-    );
-    const [targetFileSize, setTargetFileSize] =
-        React.useState<string>("18.2 KB");
+    const [targetFileName, setTargetFileName] = React.useState<string>("");
+    const [targetFileSize, setTargetFileSize] = React.useState<string>("");
 
     // Reference template
     const [referenceFile, setReferenceFile] = React.useState<File | null>(null);
-    const [referenceFileName, setReferenceFileName] = React.useState<string>(
-        "onelife-reference-v3.docx",
-    );
-    const [referenceFileSize, setReferenceFileSize] =
-        React.useState<string>("15.9 KB");
+    const [referenceFileName, setReferenceFileName] = React.useState<string>("");
+    const [referenceFileSize, setReferenceFileSize] = React.useState<string>("");
     const [rememberDefault, setRememberDefault] = React.useState<boolean>(true);
 
     // Classifier
@@ -135,6 +129,15 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
     };
 
     const handleTransfer = async () => {
+        if (!targetFile && !lesson && !targetFileName) {
+            setError("Please select a target Word document (.docx)");
+            return;
+        }
+        if (!referenceFile && !referenceFileName) {
+            setError("Please select a reference style template (.docx)");
+            return;
+        }
+
         setError(null);
         setIsTransferring(true);
         setTransferProgress(15);
@@ -176,15 +179,21 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
             }
 
             const data = await res.json();
-            const runId = data.runId || data.run?.id || "run-default-37";
+            const runId = data.runId || data.run?.id;
+            const paragraphCount = data.run?.stats?.paragraphs;
+            const msg = paragraphCount
+                ? `Format transfer complete — ${paragraphCount} paragraphs restyled`
+                : "Format transfer complete";
 
-            toast.success("Format transfer complete — 41 paragraphs restyled");
+            toast.success(msg);
 
             // Navigate to report
             if (lessonId) {
                 router.push(`/lessons/${lessonId}/report/${runId}`);
+            } else if (data.run?.lessonId) {
+                router.push(`/lessons/${data.run.lessonId}/report/${runId}`);
             } else {
-                router.push(`/lessons/lesson-37/report/${runId}`);
+                router.push(`/reports`);
             }
         } catch (err: any) {
             setError(err.message || "An error occurred during format transfer");
@@ -313,11 +322,12 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <b className="block text-[13.5px] font-medium truncate text-foreground">
-                                            {targetFileName}
+                                            {targetFileName || "No document selected"}
                                         </b>
                                         <small className="text-xs text-muted-foreground block truncate">
-                                            {targetFileSize} · from &ldquo;Add
-                                            lesson&rdquo; step
+                                            {targetFileSize
+                                                ? `${targetFileSize} · ${lesson ? 'from "Add lesson" step' : 'Ready'}`
+                                                : "Choose or drop a target .docx file"}
                                         </small>
                                     </div>
                                     <input
@@ -335,7 +345,7 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
                                         }
                                         className="text-xs h-8 cursor-pointer"
                                     >
-                                        Replace
+                                        {targetFileName ? "Replace" : "Browse"}
                                     </Button>
                                 </div>
                                 <p className="text-[12.5px] text-muted-foreground">
@@ -364,19 +374,23 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <b className="block text-[13.5px] font-medium truncate text-foreground">
-                                            {referenceFileName}
+                                            {referenceFileName || "No template selected"}
                                         </b>
                                         <div className="flex items-center gap-1.5 mt-0.5">
                                             <small className="text-xs text-muted-foreground">
-                                                {referenceFileSize}
+                                                {referenceFileSize || "Choose or drop a reference .docx template"}
                                             </small>
-                                            <span>·</span>
-                                            <Badge
-                                                variant="ok"
-                                                className="text-[10px] font-medium"
-                                            >
-                                                Saved default
-                                            </Badge>
+                                            {referenceFileName && (
+                                                <>
+                                                    <span>·</span>
+                                                    <Badge
+                                                        variant="ok"
+                                                        className="text-[10px] font-medium"
+                                                    >
+                                                        Saved default
+                                                    </Badge>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                     <input
@@ -394,7 +408,7 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
                                         }
                                         className="text-xs h-8 cursor-pointer"
                                     >
-                                        Change
+                                        {referenceFileName ? "Change" : "Browse"}
                                     </Button>
                                 </div>
 
@@ -488,8 +502,9 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
                         <div className="flex items-center gap-2.5 text-[13px] text-muted-foreground">
                             <CheckCircle2 className="size-4.5 text-[hsl(var(--success))] shrink-0" />
                             <span>
-                                Both documents ready. Transfer runs in-place on
-                                the OOXML — original file is never modified.
+                                {targetFileName && referenceFileName
+                                    ? "Both documents ready. Transfer runs in-place on the OOXML — original file is never modified."
+                                    : "Select a target document and reference template to begin format transfer."}
                             </span>
                         </div>
 

@@ -91,7 +91,9 @@ export function FormatTransferReport({
                 : "library";
 
             toast.success(
-                `Lesson ${lesson?.number || 37} saved to ${categoryName}`,
+                lesson?.number
+                    ? `Lesson ${lesson.number} saved to ${categoryName}`
+                    : `Document saved to ${categoryName}`,
             );
 
             // Route back to lessons list
@@ -112,9 +114,9 @@ export function FormatTransferReport({
     const targetName =
         run?.targetFile ||
         lesson?.originalFileName ||
-        "lesson37servantleadership.docx";
-    const referenceName = run?.referenceFileName || "onelife-reference-v3.docx";
-    const durationSec = run ? (run.durationMs / 1000).toFixed(1) : "2.4";
+        "document.docx";
+    const referenceName = run?.referenceFileName || "reference.docx";
+    const durationSec = run?.durationMs ? (run.durationMs / 1000).toFixed(1) : "0.0";
 
     return (
         <div className="space-y-6">
@@ -568,32 +570,20 @@ export function FormatTransferReport({
                                 </div>
                                 <div className="rounded-md border border-border bg-white text-zinc-900 p-6 min-h-[320px] font-serif text-[11.5px] leading-relaxed shadow-sm">
                                     <div className="italic text-zinc-600 mb-1">
-                                        Leadership Series 2
+                                        {lesson?.series || "Original format"}
                                     </div>
                                     <div className="font-bold italic text-zinc-800 text-sm mb-3">
-                                        What does servant leadership look like?
+                                        {lesson?.title || targetName}
                                     </div>
-                                    <p className="mb-3">
-                                        <b>Objectives:</b> To teach and equip
-                                        believers to lead the way Christ led —
-                                        by serving first, and to apply this in
-                                        family, church and workplace.
-                                    </p>
-                                    <p className="mb-3">
-                                        <b>Introduction:</b>
-                                        <br />
-                                        Welcome back to Onelife! As our lessons
-                                        progress and all of us are blessed and
-                                        gained many insights, this year we
-                                        decided to go deeper, practical and more
-                                        biblical…
-                                    </p>
-                                    <p className="mb-2">
-                                        <b>Mark 10:45 NIV</b>
-                                        <br />
-                                        [45] For even the Son of Man did not
-                                        come to be served, but to serve…
-                                    </p>
+                                    {lesson?.summary ? (
+                                        <p className="mb-3">
+                                            <b>Summary:</b> {lesson.summary}
+                                        </p>
+                                    ) : (
+                                        <p className="mb-3 text-zinc-500 italic">
+                                            Original formatting before OOXML restyle.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -615,22 +605,20 @@ export function FormatTransferReport({
                                 </div>
                                 <div className="rounded-md border border-border bg-white text-zinc-950 p-6 min-h-[320px] font-serif text-[14px] leading-relaxed shadow-sm">
                                     <div className="italic text-zinc-500 text-xs mb-1">
-                                        Leadership Series 2
+                                        {lesson?.series || referenceName}
                                     </div>
                                     <h4 className="text-xl font-bold tracking-tight text-zinc-900 my-2">
-                                        What does servant leadership look like?
+                                        {lesson?.title || targetName}
                                     </h4>
-                                    <p className="mb-3 text-[13.5px]">
-                                        <b>Objectives:</b> To teach and equip
-                                        believers to lead the way Christ led —
-                                        by serving first.
-                                    </p>
-                                    <p className="mb-3 text-[13.5px]">
-                                        <b>Introduction:</b>
-                                        <br />
-                                        Welcome back to Onelife! As our lessons
-                                        progress…
-                                    </p>
+                                    {lesson?.summary ? (
+                                        <p className="mb-3 text-[13.5px]">
+                                            <b>Summary:</b> {lesson.summary}
+                                        </p>
+                                    ) : (
+                                        <p className="mb-3 text-[13.5px] text-zinc-600">
+                                            Styles normalized from {referenceName}.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         )}

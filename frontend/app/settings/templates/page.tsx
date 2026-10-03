@@ -20,9 +20,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 export default function ReferenceTemplatesPage() {
-    const [defaultTemplate, setDefaultTemplate] = React.useState(
-        "onelife-reference-v3.docx",
-    );
+    const [defaultTemplate, setDefaultTemplate] = React.useState<string | null>(null);
+    const [templateSize, setTemplateSize] = React.useState<string>("");
     const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
     React.useEffect(() => {
@@ -34,6 +33,7 @@ export default function ReferenceTemplatesPage() {
         if (e.target.files && e.target.files.length > 0) {
             const f = e.target.files[0];
             setDefaultTemplate(f.name);
+            setTemplateSize(`${(f.size / 1024).toFixed(1)} KB`);
             localStorage.setItem("onelife_default_reference_name", f.name);
             toast.success(`Set ${f.name} as active default template`);
         }
@@ -63,41 +63,69 @@ export default function ReferenceTemplatesPage() {
                                 Document Workstation.
                             </CardDescription>
                         </div>
-                        <Badge variant="ok" className="gap-1 font-medium">
-                            <CheckCircle2 className="size-3" />
-                            <span>Active Default</span>
-                        </Badge>
+                        {defaultTemplate && (
+                            <Badge variant="ok" className="gap-1 font-medium">
+                                <CheckCircle2 className="size-3" />
+                                <span>Active Default</span>
+                            </Badge>
+                        )}
                     </div>
                 </CardHeader>
 
                 <CardContent className="p-5 pt-2 space-y-4">
-                    <div className="flex items-center gap-3.5 p-4 rounded-lg border border-border bg-muted/20">
-                        <div className="flex size-11 items-center justify-center rounded-lg bg-secondary text-secondary-foreground shrink-0">
-                            <FileType2 className="size-6" />
+                    {defaultTemplate ? (
+                        <div className="flex items-center gap-3.5 p-4 rounded-lg border border-border bg-muted/20">
+                            <div className="flex size-11 items-center justify-center rounded-lg bg-secondary text-secondary-foreground shrink-0">
+                                <FileType2 className="size-6" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <b className="block text-[14px] font-medium text-foreground">
+                                    {defaultTemplate}
+                                </b>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                    {templateSize ? `${templateSize} · ` : ""}Letter (8.5 × 11 in) · 0.5 in margins · Core typography roles
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                        toast.success(
+                                            `Downloading ${defaultTemplate}`,
+                                        )
+                                    }
+                                    className="h-8 text-xs gap-1.5"
+                                >
+                                    <Download className="size-3.5" />
+                                    <span>Download</span>
+                                </Button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleUpload}
+                                    accept=".docx"
+                                    className="hidden"
+                                />
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="h-8 text-xs"
+                                >
+                                    Change template
+                                </Button>
+                            </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <b className="block text-[14px] font-medium text-foreground">
-                                {defaultTemplate}
+                    ) : (
+                        <div className="flex flex-col items-center justify-center p-8 rounded-lg border border-dashed border-border bg-muted/10 text-center">
+                            <FileType2 className="size-8 text-muted-foreground mb-2" />
+                            <b className="text-sm font-medium text-foreground">
+                                No reference template uploaded
                             </b>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                                15.9 KB · Letter (8.5 × 11 in) · 0.5 in margins
-                                · 10 core typography roles
+                            <p className="text-xs text-muted-foreground mt-1 max-w-sm mb-4">
+                                Upload a Word document (.docx) to establish master styles, typography hierarchy, and geometry for format transfers.
                             </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                    toast.success(
-                                        `Downloading ${defaultTemplate}`,
-                                    )
-                                }
-                                className="h-8 text-xs gap-1.5"
-                            >
-                                <Download className="size-3.5" />
-                                <span>Download</span>
-                            </Button>
                             <input
                                 type="file"
                                 ref={fileInputRef}
@@ -106,15 +134,15 @@ export default function ReferenceTemplatesPage() {
                                 className="hidden"
                             />
                             <Button
-                                variant="outline"
                                 size="sm"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="h-8 text-xs"
+                                className="h-8 text-xs gap-1.5"
                             >
-                                Change template
+                                <UploadCloud className="size-3.5" />
+                                <span>Upload reference template</span>
                             </Button>
                         </div>
-                    </div>
+                    )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
                         <div className="p-3 rounded-md border border-border bg-card">

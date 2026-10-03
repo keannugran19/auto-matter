@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get("content-type") || "";
     let targetFileName = "target.docx";
-    let referenceFileName = "onelife-reference-v3.docx";
+    let referenceFileName = "reference.docx";
     let lessonId: string | undefined;
     let classifier: "heuristic" | "gemini" = "gemini";
     let apiKey: string | undefined;
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
           backendJobId = data.jobId;
         }
       } catch {
-        // Backend not currently running, continue with local high-fidelity run
+        // Backend not currently running, continue with local run
       }
     }
 
@@ -78,19 +78,7 @@ export async function POST(request: NextRequest) {
       referenceFileName,
       classifier,
       status: "complete",
-      stats: {
-        paragraphs: 41,
-        rolesTransferred: 10,
-        fromReference: 7,
-        fromFallback: 3,
-        geometryMatched: true,
-      },
-      warnings: [
-        "heading_3 missing in reference; derived from heading_1",
-        "reference_line unresolvable in reference; defaulted to body",
-        "definition_term unresolvable in reference; defaulted to body",
-      ],
-      durationMs: 2400,
+      durationMs: 1200,
     });
 
     if (lessonId) {

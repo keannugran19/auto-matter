@@ -141,7 +141,7 @@ export default function ReportsPage() {
                         size="sm"
                         onClick={() =>
                           router.push(
-                            `/lessons/${r.lessonId || "lesson-37"}/report/${r.id}`
+                            `/lessons/${r.lessonId || "general"}/report/${r.id}`
                           )
                         }
                         className="h-8 text-xs gap-1 cursor-pointer"

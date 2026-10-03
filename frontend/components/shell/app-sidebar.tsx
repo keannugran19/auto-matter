@@ -36,17 +36,17 @@ export function AppSidebar() {
     const currentCategory = searchParams.get("category");
 
     const [stats, setStats] = React.useState({
-        total: 128,
-        nb: 52,
-        mt: 41,
-        ld: 35,
+        total: 0,
+        nb: 0,
+        mt: 0,
+        ld: 0,
     });
 
     React.useEffect(() => {
         fetch("/api/lessons")
             .then((res) => (res.ok ? res.json() : []))
             .then((lessons: any[]) => {
-                if (Array.isArray(lessons) && lessons.length > 0) {
+                if (Array.isArray(lessons)) {
                     const nb = lessons.filter(
                         (l) => l.category === "new_believers",
                     ).length;
@@ -244,12 +244,6 @@ export function AppSidebar() {
                                         <span className="text-[13.5px]">
                                             Transfer Reports
                                         </span>
-                                        <Badge
-                                            variant="secondary"
-                                            className="ml-auto text-[11px] font-medium"
-                                        >
-                                            3 new
-                                        </Badge>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>

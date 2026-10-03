@@ -74,8 +74,8 @@ export function LessonSheet({
   const form = useForm<LessonFormValues>({
     resolver: zodResolver(lessonFormSchema),
     defaultValues: {
-      number: lesson ? lesson.number : 38,
-      category: lesson ? lesson.category : "leadership",
+      number: lesson ? lesson.number : 1,
+      category: lesson ? lesson.category : "new_believers",
       title: lesson ? lesson.title : "",
       series: lesson?.series || "",
       status: lesson ? lesson.status : "draft",
@@ -104,15 +104,17 @@ export function LessonSheet({
           if (Array.isArray(lessons) && lessons.length > 0) {
             const maxNum = Math.max(...lessons.map((l) => l.number));
             form.setValue("number", maxNum + 1);
+          } else {
+            form.setValue("number", 1);
           }
         })
         .catch(() => {});
 
       form.reset({
-        number: 38,
-        category: "leadership",
+        number: 1,
+        category: "new_believers",
         title: "",
-        series: "Leadership Series 2",
+        series: "",
         status: "draft",
         summary: "",
         runTransfer: true,

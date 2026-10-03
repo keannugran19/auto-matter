@@ -315,7 +315,7 @@ export default function LessonsPage() {
                         {stats.total}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                        +6 this month
+                        {stats.total > 0 ? `${stats.total} total` : "No lessons yet"}
                     </div>
                 </Card>
 
@@ -328,7 +328,7 @@ export default function LessonsPage() {
                         {stats.nb}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                        Series 1–4
+                        {stats.nb > 0 ? `${stats.nb} lesson${stats.nb === 1 ? "" : "s"}` : "No lessons"}
                     </div>
                 </Card>
 
@@ -341,7 +341,7 @@ export default function LessonsPage() {
                         {stats.mt}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                        Series 1–3
+                        {stats.mt > 0 ? `${stats.mt} lesson${stats.mt === 1 ? "" : "s"}` : "No lessons"}
                     </div>
                 </Card>
 
