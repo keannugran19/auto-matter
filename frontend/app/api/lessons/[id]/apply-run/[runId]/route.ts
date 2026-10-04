@@ -9,13 +9,13 @@ export async function POST(
 ) {
   try {
     const { id, runId } = await props.params;
-    const lesson = getLessonById(id);
+    const lesson = await getLessonById(id);
     if (!lesson) {
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
 
-    const run = getRunById(runId);
-    const updated = updateLesson(id, {
+    const run = await getRunById(runId);
+    const updated = await updateLesson(id, {
       formatStatus: "formatted",
       latestRunId: runId,
       formattedDocxUrl: `/api/jobs/${runId}/download`,

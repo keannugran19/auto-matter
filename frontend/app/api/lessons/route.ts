@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const search = searchParams.get("search")?.toLowerCase();
 
-    let lessons = getAllLessons();
+    let lessons = await getAllLessons();
 
     if (category && category !== "all") {
       const catCodeMap: Record<string, string> = {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       let originalFileName = file?.name || "lesson.docx";
       let fileSizeBytes = file?.size || 18000;
 
-      const newLesson = createLesson({
+      const newLesson = await createLesson({
         number,
         title,
         category,
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const newLesson = createLesson(body);
+    const newLesson = await createLesson(body);
     return NextResponse.json(newLesson, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

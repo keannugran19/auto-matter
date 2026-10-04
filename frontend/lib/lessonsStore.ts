@@ -1,142 +1,235 @@
-import fs from "fs";
-import path from "path";
+import { createServiceClient } from "./supabase/server";
 import { Lesson, TransferRun } from "./types";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const LESSONS_FILE = path.join(DATA_DIR, "lessons.json");
-const RUNS_FILE = path.join(DATA_DIR, "transfer-runs.json");
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-const SEED_LESSONS: Lesson[] = [];
-
-const SEED_RUNS: TransferRun[] = [];
-
-function ensureDataFiles() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(LESSONS_FILE)) {
-    fs.writeFileSync(LESSONS_FILE, JSON.stringify(SEED_LESSONS, null, 2), "utf-8");
-  }
-  if (!fs.existsSync(RUNS_FILE)) {
-    fs.writeFileSync(RUNS_FILE, JSON.stringify(SEED_RUNS, null, 2), "utf-8");
-  }
-}
-
-export function getAllLessons(): Lesson[] {
-  ensureDataFiles();
-  try {
-    const raw = fs.readFileSync(LESSONS_FILE, "utf-8");
-    return JSON.parse(raw);
-  } catch {
-    return SEED_LESSONS;
-  }
-}
-
-export function getLessonById(id: string): Lesson | null {
-  const lessons = getAllLessons();
-  return lessons.find((l) => l.id === id) || null;
-}
-
-export function saveLessons(lessons: Lesson[]) {
-  ensureDataFiles();
-  fs.writeFileSync(LESSONS_FILE, JSON.stringify(lessons, null, 2), "utf-8");
-}
-
-export function createLesson(data: Partial<Lesson>): Lesson {
-  const lessons = getAllLessons();
-  const nextNum = data.number || (lessons.length > 0 ? Math.max(...lessons.map((l) => l.number)) + 1 : 1);
-  const now = new Date().toISOString();
-
-  const newLesson: Lesson = {
-    id: data.id || `lesson-${nextNum}-${Date.now().toString(36)}`,
-    number: nextNum,
-    title: data.title || `Lesson ${nextNum}`,
-    category: data.category || "new_believers",
-    series: data.series || "",
-    summary: data.summary || "",
-    status: data.status || "draft",
-    originalDocxUrl: data.originalDocxUrl,
-    originalFileName: data.originalFileName || `lesson-${nextNum}.docx`,
-    fileSizeBytes: data.fileSizeBytes || 0,
-    formattedDocxUrl: data.formattedDocxUrl,
-    formatStatus: data.formatStatus || "needs_transfer",
-    latestRunId: data.latestRunId,
-    createdAt: now,
-    updatedAt: now,
+/** Map a snake_case DB row → camelCase Lesson */
+function rowToLesson(row: Record<string, any>): Lesson {
+  return {
+    id: row.id,
+    number: row.number,
+    title: row.title,
+    category: row.category,
+    series: row.series ?? "",
+    summary: row.summary ?? "",
+    status: row.status,
+    originalDocxUrl: row.original_docx_url ?? undefined,
+    originalFileName: row.original_file_name ?? undefined,
+    fileSizeBytes: row.file_size_bytes ?? 0,
+    formattedDocxUrl: row.formatted_docx_url ?? undefined,
+    pdfUrl: row.pdf_url ?? undefined,
+    formatStatus: row.format_status,
+    latestRunId: row.latest_run_id ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
-
-  lessons.unshift(newLesson);
-  saveLessons(lessons);
-  return newLesson;
 }
 
-export function updateLesson(id: string, patch: Partial<Lesson>): Lesson | null {
-  const lessons = getAllLessons();
-  const idx = lessons.findIndex((l) => l.id === id);
-  if (idx === -1) return null;
-
-  lessons[idx] = {
-    ...lessons[idx],
-    ...patch,
-    updatedAt: new Date().toISOString(),
-  };
-  saveLessons(lessons);
-  return lessons[idx];
+/** Map a camelCase Lesson patch → snake_case DB columns */
+function lessonPatchToRow(patch: Partial<Lesson>): Record<string, any> {
+  const row: Record<string, any> = {};
+  if (patch.number !== undefined) row.number = patch.number;
+  if (patch.title !== undefined) row.title = patch.title;
+  if (patch.category !== undefined) row.category = patch.category;
+  if (patch.series !== undefined) row.series = patch.series;
+  if (patch.summary !== undefined) row.summary = patch.summary;
+  if (patch.status !== undefined) row.status = patch.status;
+  if (patch.originalDocxUrl !== undefined) row.original_docx_url = patch.originalDocxUrl;
+  if (patch.originalFileName !== undefined) row.original_file_name = patch.originalFileName;
+  if (patch.fileSizeBytes !== undefined) row.file_size_bytes = patch.fileSizeBytes;
+  if (patch.formattedDocxUrl !== undefined) row.formatted_docx_url = patch.formattedDocxUrl;
+  if ("pdfUrl" in patch) row.pdf_url = (patch as any).pdfUrl;
+  if (patch.formatStatus !== undefined) row.format_status = patch.formatStatus;
+  if (patch.latestRunId !== undefined) row.latest_run_id = patch.latestRunId;
+  return row;
 }
 
-export function deleteLesson(id: string): boolean {
-  const lessons = getAllLessons();
-  const filtered = lessons.filter((l) => l.id !== id);
-  if (filtered.length === lessons.length) return false;
-  saveLessons(filtered);
-  return true;
-}
-
-export function getAllRuns(): TransferRun[] {
-  ensureDataFiles();
-  try {
-    const raw = fs.readFileSync(RUNS_FILE, "utf-8");
-    return JSON.parse(raw);
-  } catch {
-    return SEED_RUNS;
-  }
-}
-
-export function getRunById(id: string): TransferRun | null {
-  const runs = getAllRuns();
-  return runs.find((r) => r.id === id) || null;
-}
-
-export function saveRuns(runs: TransferRun[]) {
-  ensureDataFiles();
-  fs.writeFileSync(RUNS_FILE, JSON.stringify(runs, null, 2), "utf-8");
-}
-
-export function createRun(data: Partial<TransferRun>): TransferRun {
-  const runs = getAllRuns();
-  const id = data.id || `run-${Date.now().toString(36)}`;
-  const newRun: TransferRun = {
-    id,
-    lessonId: data.lessonId,
-    targetFile: data.targetFile || "target.docx",
-    referenceTemplateId: data.referenceTemplateId || "reference.docx",
-    referenceFileName: data.referenceFileName || "reference.docx",
-    classifier: data.classifier || "gemini",
-    status: data.status || "complete",
-    stats: data.stats || {
+/** Map a snake_case DB row → camelCase TransferRun */
+function rowToRun(row: Record<string, any>): TransferRun {
+  return {
+    id: row.id,
+    lessonId: row.lesson_id ?? undefined,
+    targetFile: row.target_file,
+    referenceTemplateId: row.reference_template_id,
+    referenceFileName: row.reference_file_name ?? undefined,
+    classifier: row.classifier,
+    status: row.status,
+    stats: row.stats ?? {
       paragraphs: 0,
       rolesTransferred: 0,
       fromReference: 0,
       fromFallback: 0,
       geometryMatched: true,
     },
-    warnings: data.warnings || [],
-    roleMap: data.roleMap || [],
-    durationMs: data.durationMs || 0,
-    createdAt: new Date().toISOString(),
+    warnings: row.warnings ?? [],
+    roleMap: row.role_map ?? [],
+    durationMs: row.duration_ms ?? 0,
+    createdAt: row.created_at,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Lessons
+// ---------------------------------------------------------------------------
+
+export async function getAllLessons(): Promise<Lesson[]> {
+  const db = createServiceClient();
+  const { data, error } = await db
+    .from("lessons")
+    .select("*")
+    .order("number", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(rowToLesson);
+}
+
+export async function getLessonById(id: string): Promise<Lesson | null> {
+  const db = createServiceClient();
+  const { data, error } = await db
+    .from("lessons")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? rowToLesson(data) : null;
+}
+
+export async function createLesson(input: Partial<Lesson>): Promise<Lesson> {
+  const db = createServiceClient();
+
+  // Derive next number if not provided
+  let nextNum = input.number;
+  if (!nextNum) {
+    const { data } = await db
+      .from("lessons")
+      .select("number")
+      .order("number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    nextNum = data ? (data.number as number) + 1 : 1;
+  }
+
+  const now = new Date().toISOString();
+  const id = input.id || `lesson-${nextNum}-${Date.now().toString(36)}`;
+
+  const row: Record<string, any> = {
+    id,
+    number: nextNum,
+    title: input.title || `Lesson ${nextNum}`,
+    category: input.category || "new_believers",
+    series: input.series || "",
+    summary: input.summary || "",
+    status: input.status || "draft",
+    original_docx_url: input.originalDocxUrl ?? null,
+    original_file_name: input.originalFileName || `lesson-${nextNum}.docx`,
+    file_size_bytes: input.fileSizeBytes || 0,
+    formatted_docx_url: input.formattedDocxUrl ?? null,
+    pdf_url: (input as any).pdfUrl ?? null,
+    format_status: input.formatStatus || "needs_transfer",
+    latest_run_id: input.latestRunId ?? null,
+    created_at: now,
+    updated_at: now,
   };
 
-  runs.unshift(newRun);
-  saveRuns(runs);
-  return newRun;
+  const { data, error } = await db
+    .from("lessons")
+    .insert(row)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return rowToLesson(data);
 }
+
+export async function updateLesson(
+  id: string,
+  patch: Partial<Lesson>
+): Promise<Lesson | null> {
+  const db = createServiceClient();
+  const row = lessonPatchToRow(patch);
+  row.updated_at = new Date().toISOString();
+
+  const { data, error } = await db
+    .from("lessons")
+    .update(row)
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? rowToLesson(data) : null;
+}
+
+export async function deleteLesson(id: string): Promise<boolean> {
+  const db = createServiceClient();
+  const { error, count } = await db
+    .from("lessons")
+    .delete({ count: "exact" })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  return (count ?? 0) > 0;
+}
+
+/** No-op — kept for API compatibility */
+export async function saveLessons(_lessons: Lesson[]): Promise<void> {}
+
+// ---------------------------------------------------------------------------
+// Transfer Runs
+// ---------------------------------------------------------------------------
+
+export async function getAllRuns(): Promise<TransferRun[]> {
+  const db = createServiceClient();
+  const { data, error } = await db
+    .from("transfer_runs")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(rowToRun);
+}
+
+export async function getRunById(id: string): Promise<TransferRun | null> {
+  const db = createServiceClient();
+  const { data, error } = await db
+    .from("transfer_runs")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? rowToRun(data) : null;
+}
+
+export async function createRun(input: Partial<TransferRun>): Promise<TransferRun> {
+  const db = createServiceClient();
+  const id = input.id || `run-${Date.now().toString(36)}`;
+
+  const row: Record<string, any> = {
+    id,
+    lesson_id: input.lessonId ?? null,
+    target_file: input.targetFile || "target.docx",
+    reference_template_id: input.referenceTemplateId || "reference.docx",
+    reference_file_name: input.referenceFileName || "reference.docx",
+    classifier: input.classifier || "gemini",
+    status: input.status || "complete",
+    stats: input.stats ?? {
+      paragraphs: 0,
+      rolesTransferred: 0,
+      fromReference: 0,
+      fromFallback: 0,
+      geometryMatched: true,
+    },
+    warnings: input.warnings ?? [],
+    role_map: input.roleMap ?? [],
+    duration_ms: input.durationMs || 0,
+    created_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await db
+    .from("transfer_runs")
+    .insert(row)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return rowToRun(data);
+}
+
+/** No-op — kept for API compatibility */
+export async function saveRuns(_runs: TransferRun[]): Promise<void> {}

@@ -49,13 +49,14 @@ class Job:
     previews:     Optional[dict] = None   # {"before": [...], "after": [...]}
     download_path: Optional[str] = None  # absolute path to restyled DOCX
     api_key:      Optional[str] = None
+    lesson_id:    Optional[str] = None
 
 
 _jobs: dict[str, Job] = {}
 
 
-def create_job(api_key: Optional[str] = None) -> Job:
-    job = Job(job_id=str(uuid.uuid4()), api_key=api_key)
+def create_job(api_key: Optional[str] = None, lesson_id: Optional[str] = None) -> Job:
+    job = Job(job_id=str(uuid.uuid4()), api_key=api_key, lesson_id=lesson_id)
     _jobs[job.job_id] = job
     return job
 
@@ -233,6 +234,20 @@ def _run_job_sync(
         job.previews      = previews
         job.download_path = out_path
         job.status        = "done"
+
+        # --- 8. Upload PDF to Supabase Storage (non-fatal) ---
+        try:
+            from .storage import upload_pdf, update_lesson_pdf_url
+            # LibreOffice names the PDF after the DOCX stem: output.docx -> output.pdf
+            # render_docx() writes it into after_dir
+            after_dir_path = os.path.join(job_dir, "after")
+            pdf_path = os.path.join(after_dir_path, "output.pdf")
+            if os.path.isfile(pdf_path):
+                storage_path = upload_pdf(job_id, pdf_path, job.lesson_id)
+                if storage_path and job.lesson_id:
+                    update_lesson_pdf_url(job.lesson_id, storage_path)
+        except Exception as e:
+            print(f"[storage] Post-job upload failed: {e}")
 
     except Exception:
         job.status = "error"

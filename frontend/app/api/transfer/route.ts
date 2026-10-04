@@ -9,7 +9,7 @@ const BACKEND_URL = (
 
 export async function GET() {
   try {
-    const runs = getAllRuns();
+    const runs = await getAllRuns();
     return NextResponse.json(runs);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (lessonId) {
-      const lesson = getLessonById(lessonId);
+      const lesson = await getLessonById(lessonId);
       if (lesson && lesson.originalFileName) {
         targetFileName = lesson.originalFileName;
       }
@@ -56,6 +56,8 @@ export async function POST(request: NextRequest) {
     let backendJobId: string | null = null;
     if (formData && formData.has("target") && formData.has("reference")) {
       try {
+        // FastAPI expects snake_case: lesson_id
+        if (lessonId) formData.set("lesson_id", lessonId);
         const backendRes = await fetch(`${BACKEND_URL}/api/convert`, {
           method: "POST",
           body: formData,
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     const runId = backendJobId || `run-${Date.now().toString(36)}`;
-    const newRun = createRun({
+    const newRun = await createRun({
       id: runId,
       lessonId,
       targetFile: targetFileName,
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (lessonId) {
-      updateLesson(lessonId, {
+      await updateLesson(lessonId, {
         latestRunId: newRun.id,
       });
     }

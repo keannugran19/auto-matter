@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { runId } = await props.params;
-    const run = getRunById(runId);
+    const run = await getRunById(runId);
     if (!run) {
       return NextResponse.json({ error: "Transfer run not found" }, { status: 404 });
     }

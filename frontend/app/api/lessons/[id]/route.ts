@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { id } = await props.params;
-    const lesson = getLessonById(id);
+    const lesson = await getLessonById(id);
     if (!lesson) {
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
@@ -26,7 +26,7 @@ export async function PATCH(
   try {
     const { id } = await props.params;
     const body = await request.json();
-    const updated = updateLesson(id, body);
+    const updated = await updateLesson(id, body);
     if (!updated) {
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
@@ -42,7 +42,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await props.params;
-    const ok = deleteLesson(id);
+    const ok = await deleteLesson(id);
     if (!ok) {
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }

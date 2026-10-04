@@ -9,7 +9,7 @@ export async function POST(
 ) {
   try {
     const { id } = await props.params;
-    const lesson = getLessonById(id);
+    const lesson = await getLessonById(id);
     if (!lesson) {
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
@@ -21,7 +21,7 @@ export async function POST(
     }
 
     const filename = file.name || `lesson-${lesson.number}.docx`;
-    const updated = updateLesson(id, {
+    const updated = await updateLesson(id, {
       originalFileName: filename,
       fileSizeBytes: file.size,
       originalDocxUrl: `/uploads/${filename}`,

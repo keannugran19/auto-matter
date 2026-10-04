@@ -125,13 +125,15 @@ async def convert(
     reference: UploadFile = File(...),
     api_key: Optional[str] = Form(None),
     x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
+    lesson_id: Optional[str] = Form(None),
 ):
     """
     Accept target and reference DOCX files, create a job, and start background processing.
     Optionally accepts a Gemini API key via form field or X-API-Key header.
+    Optionally accepts a lesson_id to associate the output PDF with a Supabase lesson record.
     """
     effective_key = (api_key or x_api_key or "").strip() or None
-    job = create_job(api_key=effective_key)
+    job = create_job(api_key=effective_key, lesson_id=lesson_id)
     job_dir = _job_dir(job.job_id)
     os.makedirs(job_dir, exist_ok=True)
 
