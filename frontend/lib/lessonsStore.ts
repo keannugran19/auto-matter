@@ -74,12 +74,115 @@ function rowToRun(row: Record<string, any>): TransferRun {
 // Lessons
 // ---------------------------------------------------------------------------
 
+const TITLE_MAP: Record<number, string> = {
+  1: "Sin",
+  2: "Salvation",
+  3: "Repentance",
+  4: "Sanctification",
+  5: "Consecration",
+  6: "Faith",
+  7: "Lordship of Jesus Christ",
+  8: "Who Jesus Christ Is",
+  9: "Who is the Holy Spirit (Part 1)",
+  10: "Who is the Holy Spirit (Part 2)",
+  11: "Doctrine of the Trinity",
+  12: "Attributes of God",
+  13: "The Nature and Names of God",
+  14: "Fellowship",
+  15: "How to Hear from God",
+  16: "The Church",
+  17: "The Kingdom of God",
+  18: "The Civil Government",
+  19: "Submission",
+  20: "Giving",
+  21: "Moderation",
+  22: "Overcoming Fear",
+  23: "The Christian Home",
+  24: "The Christian Marriage",
+  25: "Soul Winning",
+  26: "Divine Healing (Part 1)",
+  27: "Divine Healing (Part 2)",
+  28: "Divine Healing (Part 3)",
+  29: "Divine Healing (Part 4)",
+  30: "The Word of God",
+  31: "Authority of the Bible",
+  32: "The Bible",
+  33: "LDS: Hope",
+  34: "LDS: Second Coming",
+  35: "LDS: The Rapture of the Church",
+  36: "Bema Seat of Christ",
+  37: "Resurrection of the Body",
+  38: "Judgement of Believers",
+  39: "White Throne Judgment",
+  40: "Tribulation",
+  41: "The Antichrist",
+  42: "The Resurrection",
+};
+
+export async function syncLessonsFromStorage(): Promise<Lesson[]> {
+  const db = createServiceClient();
+  const { data: files, error: listError } = await db.storage
+    .from("pdfs")
+    .list("Lessons/New Believers", { limit: 100 });
+
+  if (listError) throw new Error(listError.message);
+  if (!files || files.length === 0) return [];
+
+  const rows: Record<string, any>[] = [];
+  for (const f of files) {
+    const match = f.name.match(/^lesson(\d+)/i);
+    if (!match) continue;
+    const num = parseInt(match[1], 10);
+    const title =
+      TITLE_MAP[num] ||
+      f.name
+        .replace(/^lesson\d+/i, "")
+        .replace(/\.pdf$/i, "")
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/[_-]+/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+        .trim() ||
+      `Lesson ${num}`;
+
+    const {
+      data: { publicUrl },
+    } = db.storage
+      .from("pdfs")
+      .getPublicUrl(`Lessons/New Believers/${f.name}`);
+
+    rows.push({
+      id: `nb-${num}`,
+      number: num,
+      title,
+      category: "new_believers",
+      series: "New Believers",
+      summary: `Foundational study on ${title} for new believers.`,
+      status: "published",
+      original_file_name: f.name,
+      file_size_bytes: f.metadata?.size || 0,
+      pdf_url: publicUrl,
+      format_status: "formatted",
+      created_at: f.created_at || new Date().toISOString(),
+      updated_at: f.updated_at || new Date().toISOString(),
+    });
+  }
+
+  if (rows.length > 0) {
+    const { error: upsertErr } = await db
+      .from("lessons")
+      .upsert(rows, { onConflict: "id" });
+    if (upsertErr) throw new Error(upsertErr.message);
+  }
+
+  return getAllLessons();
+}
+
 export async function getAllLessons(): Promise<Lesson[]> {
   const db = createServiceClient();
   const { data, error } = await db
     .from("lessons")
     .select("*")
-    .order("number", { ascending: false });
+    .order("number", { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? []).map(rowToLesson);
 }

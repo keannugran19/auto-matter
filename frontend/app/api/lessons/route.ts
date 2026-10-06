@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAllLessons, createLesson } from "@/lib/lessonsStore";
+import { getAllLessons, createLesson, syncLessonsFromStorage } from "@/lib/lessonsStore";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +11,13 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search")?.toLowerCase();
 
     let lessons = await getAllLessons();
+    if (lessons.length === 0) {
+      try {
+        lessons = await syncLessonsFromStorage();
+      } catch (err) {
+        console.error("Auto-sync storage error:", err);
+      }
+    }
 
     if (category && category !== "all") {
       const catCodeMap: Record<string, string> = {

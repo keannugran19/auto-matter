@@ -10,9 +10,19 @@ import {
     ClipboardCheck,
     FileType2,
     KeyRound,
-    Settings2,
     ChevronsUpDown,
+    User as UserIcon,
+    LogOut,
 } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
     Sidebar,
     SidebarContent,
@@ -34,6 +44,20 @@ export function AppSidebar() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const currentCategory = searchParams.get("category");
+    const { user, signOut } = useAuth();
+
+    const userEmail = user?.email || "admin@onelife.org";
+    const rawName = (user?.user_metadata?.full_name as string) || userEmail.split("@")[0] || "Admin";
+    const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+    const initials = user?.user_metadata?.full_name
+        ? (user.user_metadata.full_name as string)
+              .split(" ")
+              .filter(Boolean)
+              .map((n) => n[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase()
+        : userEmail.slice(0, 2).toUpperCase();
 
     const [stats, setStats] = React.useState({
         total: 0,
@@ -250,95 +274,72 @@ export function AppSidebar() {
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
-
-                {/* Engine Group */}
-                <SidebarGroup>
-                    <SidebarGroupLabel className="text-[11.5px] font-medium text-muted-foreground px-2">
-                        Engine
-                    </SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={
-                                        pathname === "/settings/templates"
-                                    }
-                                    tooltip="Reference Templates"
-                                >
-                                    <Link
-                                        href="/settings/templates"
-                                        className="flex items-center gap-2.5"
-                                    >
-                                        <FileType2 className="size-4" />
-                                        <span className="text-[13.5px]">
-                                            Reference Templates
-                                        </span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={pathname === "/settings/api-keys"}
-                                    tooltip="API Keys"
-                                >
-                                    <Link
-                                        href="/settings/api-keys"
-                                        className="flex items-center gap-2.5"
-                                    >
-                                        <KeyRound className="size-4" />
-                                        <span className="text-[13.5px]">
-                                            API Keys
-                                        </span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={pathname === "/settings"}
-                                    tooltip="Settings"
-                                >
-                                    <Link
-                                        href="/settings/templates"
-                                        className="flex items-center gap-2.5"
-                                    >
-                                        <Settings2 className="size-4" />
-                                        <span className="text-[13.5px]">
-                                            Settings
-                                        </span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
             </SidebarContent>
 
             {/* User Footer */}
             <SidebarFooter className="border-t border-sidebar-border p-2">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton
-                            size="lg"
-                            className="hover:bg-sidebar-accent"
-                        >
-                            <div className="flex size-8 items-center justify-center rounded-lg bg-secondary text-xs font-semibold text-secondary-foreground">
-                                JD
-                            </div>
-                            <div className="grid flex-1 text-left text-sm leading-tight">
-                                <span className="truncate font-medium text-[13px]">
-                                    Admin
-                                </span>
-                                <span className="truncate text-[11.5px] text-muted-foreground">
-                                    admin@onelife.org
-                                </span>
-                            </div>
-                            <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
-                        </SidebarMenuButton>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <SidebarMenuButton
+                                    size="lg"
+                                    className="hover:bg-sidebar-accent cursor-pointer"
+                                >
+                                    <div className="flex size-8 items-center justify-center rounded-lg bg-secondary text-xs font-semibold text-secondary-foreground shrink-0">
+                                        {initials}
+                                    </div>
+                                    <div className="grid flex-1 text-left text-sm leading-tight">
+                                        <span className="truncate font-medium text-[13px]">
+                                            {displayName}
+                                        </span>
+                                        <span className="truncate text-[11.5px] text-muted-foreground">
+                                            {userEmail}
+                                        </span>
+                                    </div>
+                                    <ChevronsUpDown className="ml-auto size-4 text-muted-foreground shrink-0" />
+                                </SidebarMenuButton>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                side="top"
+                                align="end"
+                                className="w-56 mb-1"
+                            >
+                                <DropdownMenuLabel className="font-normal p-2">
+                                    <div className="flex flex-col space-y-1">
+                                        <p className="text-xs font-medium leading-none">{displayName}</p>
+                                        <p className="text-[11px] leading-none text-muted-foreground truncate">{userEmail}</p>
+                                    </div>
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <Link href="/settings/account" className="flex items-center gap-2 cursor-pointer text-xs">
+                                        <UserIcon className="size-3.5" />
+                                        <span>Account Details</span>
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/settings/api-keys" className="flex items-center gap-2 cursor-pointer text-xs">
+                                        <KeyRound className="size-3.5" />
+                                        <span>API Keys</span>
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/settings/templates" className="flex items-center gap-2 cursor-pointer text-xs">
+                                        <FileType2 className="size-3.5" />
+                                        <span>Templates</span>
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    onClick={signOut}
+                                    className="flex items-center gap-2 text-destructive focus:text-destructive cursor-pointer text-xs"
+                                >
+                                    <LogOut className="size-3.5" />
+                                    <span>Log out</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>

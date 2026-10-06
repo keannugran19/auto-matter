@@ -16,6 +16,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Check,
+    FileText,
+    RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -68,6 +70,7 @@ export default function LessonsPage() {
         null,
     );
     const [isDeleting, setIsDeleting] = React.useState(false);
+    const [isSyncing, setIsSyncing] = React.useState(false);
 
     // Active Category filter
     const activeCategory = React.useMemo<string>(() => {
@@ -98,6 +101,22 @@ export default function LessonsPage() {
     React.useEffect(() => {
         fetchLessons();
     }, [fetchLessons]);
+
+    const handleSync = async () => {
+        try {
+            setIsSyncing(true);
+            const res = await fetch("/api/lessons/sync", { method: "POST" });
+            if (!res.ok) throw new Error("Failed to sync storage lessons");
+            const data = await res.json();
+            const count = data.count ?? data.lessons?.length ?? 42;
+            toast.success(`Synced ${count} lessons from storage`);
+            fetchLessons();
+        } catch (err: any) {
+            toast.error(err.message || "Failed to sync lessons");
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     React.useEffect(() => {
         const handleRefresh = () => fetchLessons();
@@ -288,6 +307,31 @@ export default function LessonsPage() {
                     <Button
                         variant="outline"
                         size="sm"
+                        onClick={handleSync}
+                        disabled={isSyncing}
+                        className="h-9 gap-1.5 cursor-pointer"
+                    >
+                        <RefreshCw
+                            className={`size-4 ${isSyncing ? "animate-spin" : ""}`}
+                        />
+                        <span>Sync Storage</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            const blob = new Blob(
+                                [JSON.stringify(filteredLessons, null, 2)],
+                                { type: "application/json" },
+                            );
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `lessons-${activeCategory}.json`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            toast.success("Lessons exported");
+                        }}
                         className="h-9 gap-1.5 cursor-pointer"
                     >
                         <Download className="size-4" />
@@ -738,16 +782,33 @@ export default function LessonsPage() {
 
                                             {columnVisibility.title && (
                                                 <td className="px-3.5 py-2.5">
-                                                    <button
-                                                        onClick={() =>
-                                                            router.push(
-                                                                `/lessons/${lesson.id}/workstation`,
-                                                            )
-                                                        }
-                                                        className="font-medium text-left hover:underline text-foreground cursor-pointer block truncate max-w-md"
-                                                    >
-                                                        {lesson.title}
-                                                    </button>
+                                                    <div className="flex items-center gap-2 max-w-md">
+                                                        <button
+                                                            onClick={() =>
+                                                                router.push(
+                                                                    `/lessons/${lesson.id}/workstation`,
+                                                                )
+                                                            }
+                                                            className="font-medium text-left hover:underline text-foreground cursor-pointer truncate"
+                                                        >
+                                                            {lesson.title}
+                                                        </button>
+                                                        {lesson.pdfUrl && (
+                                                            <a
+                                                                href={lesson.pdfUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                onClick={(e) =>
+                                                                    e.stopPropagation()
+                                                                }
+                                                                className="inline-flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground bg-muted/60 hover:bg-muted px-1.5 py-0.5 rounded border border-border/60 transition-colors shrink-0 cursor-pointer"
+                                                                title="Open PDF"
+                                                            >
+                                                                <FileText className="size-3 text-red-500/80" />
+                                                                <span>PDF</span>
+                                                            </a>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             )}
 
@@ -873,6 +934,23 @@ export default function LessonsPage() {
                                                                 transfer
                                                             </span>
                                                         </DropdownMenuItem>
+
+                                                        {lesson.pdfUrl && (
+                                                            <DropdownMenuItem
+                                                                onClick={() => {
+                                                                    window.open(
+                                                                        lesson.pdfUrl,
+                                                                        "_blank",
+                                                                    );
+                                                                }}
+                                                                className="cursor-pointer gap-2"
+                                                            >
+                                                                <FileText className="size-3.5 text-muted-foreground" />
+                                                                <span>
+                                                                    View / Download PDF
+                                                                </span>
+                                                            </DropdownMenuItem>
+                                                        )}
 
                                                         <DropdownMenuItem
                                                             onClick={() => {

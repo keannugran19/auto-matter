@@ -176,6 +176,22 @@ export function Topbar({ onOpenSearch }: TopbarProps) {
             );
         }
 
+        if (pathname === "/settings/account" || pathname === "/settings") {
+            return (
+                <BreadcrumbList className="text-[13.5px]">
+                    <BreadcrumbItem>
+                        <BreadcrumbPage>Settings</BreadcrumbPage>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                        <BreadcrumbPage className="font-medium text-foreground">
+                            Account
+                        </BreadcrumbPage>
+                    </BreadcrumbItem>
+                </BreadcrumbList>
+            );
+        }
+
         return (
             <BreadcrumbList className="text-[13.5px]">
                 <BreadcrumbItem>

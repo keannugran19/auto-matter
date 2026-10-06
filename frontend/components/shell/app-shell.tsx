@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import { Topbar } from "./topbar";
@@ -13,11 +14,16 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const pathname = usePathname();
+  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/auth");
+
   const [commandOpen, setCommandOpen] = React.useState(false);
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [selectedLesson, setSelectedLesson] = React.useState<Lesson | null>(null);
 
   React.useEffect(() => {
+    if (isAuthRoute) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       // ⌘K or Ctrl+K for search command palette
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -54,7 +60,17 @@ export function AppShell({ children }: AppShellProps) {
       window.removeEventListener("open-add-lesson", handleOpenAddLesson);
       window.removeEventListener("open-edit-lesson", handleOpenEditLesson as EventListener);
     };
-  }, []);
+  }, [isAuthRoute]);
+
+  if (isAuthRoute) {
+    return (
+      <main className="min-h-screen w-full bg-background flex flex-col">
+        <React.Suspense fallback={<div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">Loading…</div>}>
+          {children}
+        </React.Suspense>
+      </main>
+    );
+  }
 
   return (
     <SidebarProvider defaultOpen={true}>

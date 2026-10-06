@@ -2,15 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
 
-  // API routes handle their own auth via service key
+  // API routes handle their own auth
   if (pathname.startsWith("/api/")) {
-    return NextResponse.next();
-  }
-
-  // Allow login page through without redirect loop
-  if (pathname.startsWith("/login")) {
     return NextResponse.next();
   }
 
@@ -37,13 +32,29 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session — important: do not remove this
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/auth");
+
+  // If authenticated user visits /login, redirect to target or home
+  if (user && pathname.startsWith("/login")) {
+    const nextUrl = request.nextUrl.searchParams.get("next") || "/lessons";
+    return NextResponse.redirect(new URL(nextUrl, request.url));
+  }
+
+  // Allow unauthenticated access to auth pages
+  if (isAuthRoute) {
+    return response;
+  }
+
+  // Redirect unauthenticated requests to login
+  if (!user) {
     const loginUrl = new URL("/login", request.url);
+    if (pathname !== "/" && pathname !== "/lessons") {
+      loginUrl.searchParams.set("next", `${pathname}${search}`);
+    }
     return NextResponse.redirect(loginUrl);
   }
 
