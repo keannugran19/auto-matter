@@ -118,7 +118,7 @@ export default function ReportsPage() {
                       {r.referenceTemplateId}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                      {r.classifier === "gemini" ? "Gemini AI" : "Heuristic"}
+                      {r.classifier === "gemini" ? "Gemini AI" : "Default"}
                     </td>
                     <td className="px-4 py-2.5">
                       <Badge variant="ok" className="gap-1 text-[11px] font-medium">

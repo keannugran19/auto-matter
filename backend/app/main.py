@@ -188,45 +188,42 @@ def download_output(job_id: str):
     Download the restyled DOCX file once the job has succeeded.
     """
     job = get_job(job_id)
-    if job is None:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={"error": f"Job '{job_id}' not found"},
-        )
+    download_path = (job.download_path if job and job.download_path else None) or os.path.join(_job_dir(job_id), "output.docx")
 
-    if job.status != "done" or not job.download_path or not os.path.isfile(job.download_path):
+    if not os.path.isfile(download_path):
+        status_code = status.HTTP_404_NOT_FOUND if job is None else status.HTTP_400_BAD_REQUEST
         return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status_code,
             content={"error": f"Job '{job_id}' output is not ready for download"},
         )
 
     return FileResponse(
-        job.download_path,
+        download_path,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         filename="restyled.docx",
     )
 
 
-@app.get("/api/jobs/{job_id}/preview/{side}/{filename}")
-def get_preview_image(job_id: str, side: str, filename: str):
+@app.get("/api/jobs/{job_id}/original")
+def get_original(job_id: str):
     """
-    Serve a generated page preview JPEG.
+    Download the original uploaded target DOCX for a job.
     """
-    if side not in ("before", "after"):
-        raise HTTPException(status_code=400, detail="Invalid preview side")
+    target_path = os.path.join(_job_dir(job_id), "target.docx")
+    if not os.path.isfile(target_path):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"error": f"Job '{job_id}' original document not found"},
+        )
 
-    if not PREVIEW_FILENAME_REGEX.match(filename):
-        raise HTTPException(status_code=400, detail="Invalid preview filename")
+    return FileResponse(
+        target_path,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename="original.docx",
+    )
 
-    job = get_job(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
 
-    image_path = os.path.join(_job_dir(job_id), side, filename)
-    if not os.path.isfile(image_path):
-        raise HTTPException(status_code=404, detail="Preview image not found")
 
-    return FileResponse(image_path, media_type="image/jpeg")
 
 
 @app.delete("/api/jobs/{job_id}")

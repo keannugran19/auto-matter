@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { ThemeToggle } from "./theme-toggle";
 import { CATEGORY_LABELS, CATEGORY_CODES } from "@/lib/types";
+import { useCategories } from "@/lib/useCategories";
 
 interface TopbarProps {
     onOpenSearch: () => void;
@@ -25,13 +26,17 @@ export function Topbar({ onOpenSearch }: TopbarProps) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const categoryParam = searchParams.get("category");
+    const { categories } = useCategories();
 
     // Determine breadcrumb segments
     const renderBreadcrumbs = () => {
         if (pathname === "/lessons") {
             const catLabel =
-                categoryParam && CATEGORY_CODES[categoryParam]
-                    ? CATEGORY_LABELS[CATEGORY_CODES[categoryParam]]
+                categoryParam
+                    ? categories.find((c) => c.slug === categoryParam)?.name ||
+                      (CATEGORY_CODES[categoryParam] && CATEGORY_LABELS[CATEGORY_CODES[categoryParam]]) ||
+                      CATEGORY_LABELS[categoryParam] ||
+                      categoryParam
                     : "All lessons";
 
             return (
@@ -170,6 +175,22 @@ export function Topbar({ onOpenSearch }: TopbarProps) {
                     <BreadcrumbItem>
                         <BreadcrumbPage className="font-medium text-foreground">
                             API Keys
+                        </BreadcrumbPage>
+                    </BreadcrumbItem>
+                </BreadcrumbList>
+            );
+        }
+
+        if (pathname === "/settings/categories") {
+            return (
+                <BreadcrumbList className="text-[13.5px]">
+                    <BreadcrumbItem>
+                        <BreadcrumbPage>Settings</BreadcrumbPage>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                        <BreadcrumbPage className="font-medium text-foreground">
+                            Categories
                         </BreadcrumbPage>
                     </BreadcrumbItem>
                 </BreadcrumbList>

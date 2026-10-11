@@ -37,10 +37,11 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Lesson, Category } from "@/lib/types";
+import { useCategories } from "@/lib/useCategories";
 
 const lessonFormSchema = z.object({
   number: z.coerce.number().min(1, "Lesson number is required"),
-  category: z.enum(["new_believers", "mentoring", "leadership"]),
+  category: z.string().min(1, "Category is required"),
   title: z.string().min(1, "Title is required"),
   series: z.string().optional(),
   status: z.enum(["draft", "published"]),
@@ -64,6 +65,7 @@ export function LessonSheet({
   onSuccess,
 }: LessonSheetProps) {
   const router = useRouter();
+  const { categories } = useCategories();
   const [file, setFile] = React.useState<File | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -266,24 +268,17 @@ export function LessonSheet({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="new_believers">
-                            <div className="flex items-center gap-2">
-                              <span className="size-2 rounded-full bg-[hsl(var(--nb))]" />
-                              <span>New Believers</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="mentoring">
-                            <div className="flex items-center gap-2">
-                              <span className="size-2 rounded-full bg-[hsl(var(--mt))]" />
-                              <span>Mentoring</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="leadership">
-                            <div className="flex items-center gap-2">
-                              <span className="size-2 rounded-full bg-[hsl(var(--ld))]" />
-                              <span>Leadership</span>
-                            </div>
-                          </SelectItem>
+                          {categories.map((c) => (
+                            <SelectItem key={c.slug} value={c.slug}>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="size-2 rounded-full shrink-0 shadow-2xs"
+                                  style={{ backgroundColor: c.color }}
+                                />
+                                <span>{c.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />

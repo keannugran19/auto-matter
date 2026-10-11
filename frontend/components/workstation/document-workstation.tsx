@@ -15,6 +15,7 @@ import {
     Loader2,
     AlertTriangle,
     Check,
+    UploadCloud,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,7 +26,15 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Lesson, CATEGORY_LABELS } from "@/lib/types";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Lesson, Category, CATEGORY_LABELS } from "@/lib/types";
+import { useCategories } from "@/lib/useCategories";
 
 interface DocumentWorkstationProps {
     lessonId?: string;
@@ -37,10 +46,12 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
     const [lesson, setLesson] = React.useState<Lesson | null>(null);
     const [loadingLesson, setLoadingLesson] = React.useState(Boolean(lessonId));
 
-    // Target file
+    const { categories } = useCategories();
+    // Target file & Category
     const [targetFile, setTargetFile] = React.useState<File | null>(null);
     const [targetFileName, setTargetFileName] = React.useState<string>("");
     const [targetFileSize, setTargetFileSize] = React.useState<string>("");
+    const [category, setCategory] = React.useState<Category>("new_believers");
 
     // Reference template
     const [referenceFile, setReferenceFile] = React.useState<File | null>(null);
@@ -61,6 +72,9 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
     const targetInputRef = React.useRef<HTMLInputElement | null>(null);
     const referenceInputRef = React.useRef<HTMLInputElement | null>(null);
 
+    const [targetDragOver, setTargetDragOver] = React.useState(false);
+    const [referenceDragOver, setReferenceDragOver] = React.useState(false);
+
     // Load lesson if lessonId provided
     React.useEffect(() => {
         if (lessonId) {
@@ -70,6 +84,9 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
                 .then((data) => {
                     if (data) {
                         setLesson(data);
+                        if (data.category) {
+                            setCategory(data.category);
+                        }
                         if (data.originalFileName) {
                             setTargetFileName(data.originalFileName);
                             if (data.fileSizeBytes) {
@@ -107,6 +124,39 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
     const handleReferenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const f = e.target.files[0];
+            setReferenceFile(f);
+            setReferenceFileName(f.name);
+            setReferenceFileSize(`${(f.size / 1024).toFixed(1)} KB`);
+            if (rememberDefault) {
+                localStorage.setItem("onelife_default_reference_name", f.name);
+            }
+        }
+    };
+
+    const handleTargetDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setTargetDragOver(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const f = e.dataTransfer.files[0];
+            if (!f.name.endsWith(".docx")) {
+                toast.error("Please drop a Word document (.docx)");
+                return;
+            }
+            setTargetFile(f);
+            setTargetFileName(f.name);
+            setTargetFileSize(`${(f.size / 1024).toFixed(1)} KB`);
+        }
+    };
+
+    const handleReferenceDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setReferenceDragOver(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const f = e.dataTransfer.files[0];
+            if (!f.name.endsWith(".docx")) {
+                toast.error("Please drop a Word document (.docx)");
+                return;
+            }
             setReferenceFile(f);
             setReferenceFileName(f.name);
             setReferenceFileSize(`${(f.size / 1024).toFixed(1)} KB`);
@@ -157,6 +207,7 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
             if (targetFile) formData.append("target", targetFile);
             if (referenceFile) formData.append("reference", referenceFile);
             if (lessonId) formData.append("lessonId", lessonId);
+            formData.append("category", category);
             formData.append("classifier", classifier);
 
             // Check for saved API key
@@ -187,11 +238,10 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
 
             toast.success(msg);
 
-            // Navigate to report
-            if (lessonId) {
-                router.push(`/lessons/${lessonId}/report/${runId}`);
-            } else if (data.run?.lessonId) {
-                router.push(`/lessons/${data.run.lessonId}/report/${runId}`);
+            // Navigate to report with specific lesson uploaded
+            const targetLessonId = data.lessonId || data.run?.lessonId || lessonId;
+            if (targetLessonId) {
+                router.push(`/lessons/${targetLessonId}/report/${runId}`);
             } else {
                 router.push(`/reports`);
             }
@@ -214,7 +264,7 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [isTransferring, targetFile, referenceFile, lessonId, classifier]);
+    }, [isTransferring, targetFile, referenceFile, lessonId, classifier, category]);
 
     return (
         <div className="space-y-6">
@@ -316,20 +366,22 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
                                     </b>
                                 </div>
 
-                                <div className="flex items-center gap-3 p-3.5 rounded-lg border border-border bg-card">
-                                    <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground shrink-0">
-                                        <FileText className="size-5" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <b className="block text-[13.5px] font-medium truncate text-foreground">
-                                            {targetFileName || "No document selected"}
-                                        </b>
-                                        <small className="text-xs text-muted-foreground block truncate">
-                                            {targetFileSize
-                                                ? `${targetFileSize} · ${lesson ? 'from "Add lesson" step' : 'Ready'}`
-                                                : "Choose or drop a target .docx file"}
-                                        </small>
-                                    </div>
+                                <div
+                                    onClick={() => targetInputRef.current?.click()}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        setTargetDragOver(true);
+                                    }}
+                                    onDragLeave={() => setTargetDragOver(false)}
+                                    onDrop={handleTargetDrop}
+                                    className={`h-56 rounded-xl border-2 transition-all flex flex-col items-center justify-between p-5 text-center cursor-pointer select-none relative ${
+                                        targetDragOver
+                                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                                            : targetFileName
+                                            ? "border-border bg-card hover:bg-muted/30 hover:border-border/80 shadow-xs"
+                                            : "border-dashed border-border bg-card/60 hover:bg-muted/40 hover:border-foreground/30"
+                                    }`}
+                                >
                                     <input
                                         type="file"
                                         ref={targetInputRef}
@@ -337,16 +389,65 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
                                         accept=".docx"
                                         className="hidden"
                                     />
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() =>
-                                            targetInputRef.current?.click()
-                                        }
-                                        className="text-xs h-8 cursor-pointer"
-                                    >
-                                        {targetFileName ? "Replace" : "Browse"}
-                                    </Button>
+
+                                    {targetFileName ? (
+                                        <>
+                                            <div className="flex size-12 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-2xs mt-1">
+                                                <FileText className="size-6 text-foreground" />
+                                            </div>
+                                            <div className="w-full max-w-[280px] space-y-1 px-2">
+                                                <b
+                                                    className="block text-[13.5px] font-medium truncate text-foreground"
+                                                    title={targetFileName}
+                                                >
+                                                    {targetFileName}
+                                                </b>
+                                                <small className="text-xs text-muted-foreground block truncate">
+                                                    {targetFileSize
+                                                        ? `${targetFileSize} · ${lesson ? 'Linked from lesson' : 'Ready'}`
+                                                        : "Ready for formatting transfer"}
+                                                </small>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    targetInputRef.current?.click();
+                                                }}
+                                                className="h-8 text-xs font-medium cursor-pointer"
+                                            >
+                                                Replace document
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground mt-1">
+                                                <UploadCloud className="size-6" />
+                                            </div>
+                                            <div className="space-y-1 max-w-[260px] px-2">
+                                                <span className="block text-[13.5px] font-medium text-foreground">
+                                                    Drop target lesson (.docx)
+                                                </span>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Drag & drop here or click to browse
+                                                </p>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    targetInputRef.current?.click();
+                                                }}
+                                                className="h-8 text-xs font-medium cursor-pointer"
+                                            >
+                                                Browse file
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
                                 <p className="text-[12.5px] text-muted-foreground">
                                     Content is preserved; only styles will be
@@ -368,31 +469,22 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
                                     </b>
                                 </div>
 
-                                <div className="flex items-center gap-3 p-3.5 rounded-lg border border-border bg-card">
-                                    <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground shrink-0">
-                                        <FileType2 className="size-5" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <b className="block text-[13.5px] font-medium truncate text-foreground">
-                                            {referenceFileName || "No template selected"}
-                                        </b>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                            <small className="text-xs text-muted-foreground">
-                                                {referenceFileSize || "Choose or drop a reference .docx template"}
-                                            </small>
-                                            {referenceFileName && (
-                                                <>
-                                                    <span>·</span>
-                                                    <Badge
-                                                        variant="ok"
-                                                        className="text-[10px] font-medium"
-                                                    >
-                                                        Saved default
-                                                    </Badge>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
+                                <div
+                                    onClick={() => referenceInputRef.current?.click()}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        setReferenceDragOver(true);
+                                    }}
+                                    onDragLeave={() => setReferenceDragOver(false)}
+                                    onDrop={handleReferenceDrop}
+                                    className={`h-56 rounded-xl border-2 transition-all flex flex-col items-center justify-between p-5 text-center cursor-pointer select-none relative ${
+                                        referenceDragOver
+                                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                                            : referenceFileName
+                                            ? "border-border bg-card hover:bg-muted/30 hover:border-border/80 shadow-xs"
+                                            : "border-dashed border-border bg-card/60 hover:bg-muted/40 hover:border-foreground/30"
+                                    }`}
+                                >
                                     <input
                                         type="file"
                                         ref={referenceInputRef}
@@ -400,16 +492,71 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
                                         accept=".docx"
                                         className="hidden"
                                     />
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() =>
-                                            referenceInputRef.current?.click()
-                                        }
-                                        className="text-xs h-8 cursor-pointer"
-                                    >
-                                        {referenceFileName ? "Change" : "Browse"}
-                                    </Button>
+
+                                    {referenceFileName ? (
+                                        <>
+                                            <div className="flex size-12 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-2xs mt-1">
+                                                <FileType2 className="size-6 text-foreground" />
+                                            </div>
+                                            <div className="w-full max-w-[280px] space-y-1 px-2">
+                                                <div className="flex items-center justify-center gap-1.5">
+                                                    <b
+                                                        className="text-[13.5px] font-medium truncate text-foreground max-w-[200px]"
+                                                        title={referenceFileName}
+                                                    >
+                                                        {referenceFileName}
+                                                    </b>
+                                                    <Badge
+                                                        variant="ok"
+                                                        className="text-[10px] font-medium shrink-0"
+                                                    >
+                                                        Default
+                                                    </Badge>
+                                                </div>
+                                                <small className="text-xs text-muted-foreground block truncate">
+                                                    {referenceFileSize || "Master reference style template"}
+                                                </small>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    referenceInputRef.current?.click();
+                                                }}
+                                                className="h-8 text-xs font-medium cursor-pointer"
+                                            >
+                                                Change template
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground mt-1">
+                                                <UploadCloud className="size-6" />
+                                            </div>
+                                            <div className="space-y-1 max-w-[260px] px-2">
+                                                <span className="block text-[13.5px] font-medium text-foreground">
+                                                    Drop reference template (.docx)
+                                                </span>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Master typography & geometry source
+                                                </p>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    referenceInputRef.current?.click();
+                                                }}
+                                                className="h-8 text-xs font-medium cursor-pointer"
+                                            >
+                                                Browse file
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
 
                                 <div className="flex items-center gap-2.5 pt-0.5">
@@ -432,42 +579,75 @@ export function DocumentWorkstation({ lessonId }: DocumentWorkstationProps) {
 
                         <Separator />
 
-                        {/* Paragraph Classifier Selection */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                            <div>
-                                <b className="text-[13.5px] font-medium text-foreground block">
-                                    Paragraph classifier
-                                </b>
-                                <p className="text-[12.5px] text-muted-foreground mt-0.5">
-                                    Identifies headings, body, scripture refs
-                                    and captions before styles are mapped.
-                                </p>
+                        {/* Options: Target Category & Paragraph Classifier */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
+                            {/* Target Category */}
+                            <div className="space-y-1.5">
+                                <div>
+                                    <b className="text-[13.5px] font-medium text-foreground block">
+                                        Target category
+                                    </b>
+                                    <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                                        Curriculum series for the uploaded lesson.
+                                    </p>
+                                </div>
+
+                                <Select value={category} onValueChange={(val) => setCategory(val)}>
+                                    <SelectTrigger className="h-9 w-full max-w-xs text-xs">
+                                        <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {categories.map((c) => (
+                                            <SelectItem key={c.slug} value={c.slug}>
+                                                <div className="flex items-center gap-2">
+                                                    <span
+                                                        className="size-2 rounded-full shrink-0 shadow-2xs"
+                                                        style={{ backgroundColor: c.color }}
+                                                    />
+                                                    <span>{c.name}</span>
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
-                            <div className="inline-flex items-center bg-muted p-0.5 rounded-md text-xs font-medium self-start sm:self-auto">
-                                <button
-                                    type="button"
-                                    onClick={() => setClassifier("heuristic")}
-                                    className={`h-7 px-3 rounded-[5px] inline-flex items-center gap-1.5 transition-all cursor-pointer ${
-                                        classifier === "heuristic"
-                                            ? "bg-background text-foreground shadow-sm font-semibold"
-                                            : "text-muted-foreground hover:text-foreground"
-                                    }`}
-                                >
-                                    Heuristic
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setClassifier("gemini")}
-                                    className={`h-7 px-3 rounded-[5px] inline-flex items-center gap-1.5 transition-all cursor-pointer ${
-                                        classifier === "gemini"
-                                            ? "bg-background text-foreground shadow-sm font-semibold"
-                                            : "text-muted-foreground hover:text-foreground"
-                                    }`}
-                                >
-                                    <Sparkles className="size-3 text-primary" />
-                                    <span>Gemini AI</span>
-                                </button>
+                            {/* Paragraph Classifier */}
+                            <div className="space-y-1.5">
+                                <div>
+                                    <b className="text-[13.5px] font-medium text-foreground block">
+                                        Paragraph classifier
+                                    </b>
+                                    <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                                        Identifies headings, body, and scripture refs.
+                                    </p>
+                                </div>
+
+                                <div className="inline-flex items-center bg-muted p-0.5 rounded-md text-xs font-medium">
+                                    <button
+                                        type="button"
+                                        onClick={() => setClassifier("heuristic")}
+                                        className={`h-7 px-3 rounded-[5px] inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                                            classifier === "heuristic"
+                                                ? "bg-background text-foreground shadow-sm font-semibold"
+                                                : "text-muted-foreground hover:text-foreground"
+                                        }`}
+                                    >
+                                        Default
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setClassifier("gemini")}
+                                        className={`h-7 px-3 rounded-[5px] inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+                                            classifier === "gemini"
+                                                ? "bg-background text-foreground shadow-sm font-semibold"
+                                                : "text-muted-foreground hover:text-foreground"
+                                        }`}
+                                    >
+                                        <Sparkles className="size-3 text-primary" />
+                                        <span>Gemini AI</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

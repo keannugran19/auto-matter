@@ -1,12 +1,22 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- categories table
+CREATE TABLE IF NOT EXISTS categories (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  color TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- lessons table
 CREATE TABLE IF NOT EXISTS lessons (
   id TEXT PRIMARY KEY,
   number INTEGER NOT NULL,
   title TEXT NOT NULL,
-  category TEXT NOT NULL CHECK (category IN ('new_believers', 'mentoring', 'leadership')),
+  category TEXT NOT NULL,
   series TEXT DEFAULT '',
   summary TEXT DEFAULT '',
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),

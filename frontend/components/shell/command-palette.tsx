@@ -17,8 +17,10 @@ import {
     ClipboardCheck,
     Settings,
     BookOpen,
+    Tags,
 } from "lucide-react";
 import { Lesson, CATEGORY_LABELS } from "@/lib/types";
+import { useCategories } from "@/lib/useCategories";
 
 interface CommandPaletteProps {
     open: boolean;
@@ -32,6 +34,7 @@ export function CommandPalette({
     onOpenAddLesson,
 }: CommandPaletteProps) {
     const router = useRouter();
+    const { categories } = useCategories();
     const [lessons, setLessons] = React.useState<Lesson[]>([]);
 
     React.useEffect(() => {
@@ -50,17 +53,9 @@ export function CommandPalette({
         callback();
     };
 
-    const categoryDotClass = (cat: string) => {
-        switch (cat) {
-            case "new_believers":
-                return "bg-[hsl(var(--nb))]";
-            case "mentoring":
-                return "bg-[hsl(var(--mt))]";
-            case "leadership":
-                return "bg-[hsl(var(--ld))]";
-            default:
-                return "bg-muted-foreground";
-        }
+    const getCategoryColor = (cat: string) => {
+        const found = categories.find((c) => c.slug === cat);
+        return found?.color || "#6b7280";
     };
 
     return (
@@ -116,6 +111,17 @@ export function CommandPalette({
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Reference Templates</span>
                     </CommandItem>
+
+                    <CommandItem
+                        onSelect={() =>
+                            handleSelect(() => {
+                                router.push("/settings/categories");
+                            })
+                        }
+                    >
+                        <Tags className="mr-2 h-4 w-4" />
+                        <span>Manage Categories</span>
+                    </CommandItem>
                 </CommandGroup>
 
                 <CommandSeparator />
@@ -134,9 +140,8 @@ export function CommandPalette({
                             }
                         >
                             <span
-                                className={`mr-2 h-2 w-2 rounded-full shrink-0 ${categoryDotClass(
-                                    lesson.category,
-                                )}`}
+                                className="mr-2 h-2 w-2 rounded-full shrink-0 shadow-2xs"
+                                style={{ backgroundColor: getCategoryColor(lesson.category) }}
                             />
                             <span className="font-mono text-xs text-muted-foreground mr-1.5">
                                 #{lesson.number}
@@ -146,7 +151,8 @@ export function CommandPalette({
                             </span>
                             <span className="ml-auto text-xs text-muted-foreground truncate">
                                 ·{" "}
-                                {CATEGORY_LABELS[lesson.category] ||
+                                {categories.find((c) => c.slug === lesson.category)?.name ||
+                                    CATEGORY_LABELS[lesson.category] ||
                                     lesson.category}
                             </span>
                         </CommandItem>

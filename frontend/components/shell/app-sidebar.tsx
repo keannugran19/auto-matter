@@ -13,8 +13,11 @@ import {
     ChevronsUpDown,
     User as UserIcon,
     LogOut,
+    Plus,
+    Tags,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useCategories } from "@/lib/useCategories";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -59,33 +62,23 @@ export function AppSidebar() {
               .toUpperCase()
         : userEmail.slice(0, 2).toUpperCase();
 
-    const [stats, setStats] = React.useState({
-        total: 0,
-        nb: 0,
-        mt: 0,
-        ld: 0,
-    });
+    const { categories } = useCategories();
+    const [totalLessons, setTotalLessons] = React.useState(0);
+    const [lessonCategoryCounts, setLessonCategoryCounts] = React.useState<Record<string, number>>({});
 
     React.useEffect(() => {
         fetch("/api/lessons")
             .then((res) => (res.ok ? res.json() : []))
             .then((lessons: any[]) => {
                 if (Array.isArray(lessons)) {
-                    const nb = lessons.filter(
-                        (l) => l.category === "new_believers",
-                    ).length;
-                    const mt = lessons.filter(
-                        (l) => l.category === "mentoring",
-                    ).length;
-                    const ld = lessons.filter(
-                        (l) => l.category === "leadership",
-                    ).length;
-                    setStats({
-                        total: lessons.length,
-                        nb,
-                        mt,
-                        ld,
-                    });
+                    setTotalLessons(lessons.length);
+                    const counts: Record<string, number> = {};
+                    for (const l of lessons) {
+                        if (l.category) {
+                            counts[l.category] = (counts[l.category] || 0) + 1;
+                        }
+                    }
+                    setLessonCategoryCounts(counts);
                 }
             })
             .catch(() => {});
@@ -163,71 +156,55 @@ export function AppSidebar() {
                                             Lessons
                                         </span>
                                         <span className="ml-auto text-[11.5px] text-muted-foreground tabular-nums">
-                                            {stats.total}
+                                            {totalLessons || categories.reduce((s, c) => s + (c.count ?? 0), 0)}
                                         </span>
                                     </Link>
                                 </SidebarMenuButton>
 
                                 <SidebarMenuSub className="ml-5 pl-2.5 border-l border-sidebar-border space-y-0.5">
-                                    <SidebarMenuSubItem>
-                                        <SidebarMenuSubButton
-                                            asChild
-                                            isActive={
-                                                pathname === "/lessons" &&
-                                                currentCategory === "nb"
-                                            }
-                                        >
-                                            <Link
-                                                href="/lessons?category=nb"
-                                                className="flex items-center gap-2 text-[13px]"
-                                            >
-                                                <span className="size-2 rounded-full bg-[hsl(var(--nb))] shrink-0" />
-                                                <span>New Believers</span>
-                                                <span className="ml-auto text-[11.5px] text-muted-foreground tabular-nums">
-                                                    {stats.nb}
-                                                </span>
-                                            </Link>
-                                        </SidebarMenuSubButton>
-                                    </SidebarMenuSubItem>
+                                    {categories.map((cat) => {
+                                        const count = lessonCategoryCounts[cat.slug] ?? cat.count ?? 0;
+                                        const isActive =
+                                            pathname === "/lessons" &&
+                                            (currentCategory === cat.slug ||
+                                                (cat.slug === "new_believers" && currentCategory === "nb") ||
+                                                (cat.slug === "mentoring" && currentCategory === "mt") ||
+                                                (cat.slug === "leadership" && currentCategory === "ld"));
 
-                                    <SidebarMenuSubItem>
-                                        <SidebarMenuSubButton
-                                            asChild
-                                            isActive={
-                                                pathname === "/lessons" &&
-                                                currentCategory === "mt"
-                                            }
-                                        >
-                                            <Link
-                                                href="/lessons?category=mt"
-                                                className="flex items-center gap-2 text-[13px]"
-                                            >
-                                                <span className="size-2 rounded-full bg-[hsl(var(--mt))] shrink-0" />
-                                                <span>Mentoring</span>
-                                                <span className="ml-auto text-[11.5px] text-muted-foreground tabular-nums">
-                                                    {stats.mt}
-                                                </span>
-                                            </Link>
-                                        </SidebarMenuSubButton>
-                                    </SidebarMenuSubItem>
+                                        return (
+                                            <SidebarMenuSubItem key={cat.slug}>
+                                                <SidebarMenuSubButton
+                                                    asChild
+                                                    isActive={isActive}
+                                                >
+                                                    <Link
+                                                        href={`/lessons?category=${cat.slug}`}
+                                                        className="flex items-center gap-2 text-[13px]"
+                                                    >
+                                                        <span
+                                                            className="size-2 rounded-full shrink-0 shadow-2xs"
+                                                            style={{ backgroundColor: cat.color }}
+                                                        />
+                                                        <span className="truncate">{cat.name}</span>
+                                                        <span className="ml-auto text-[11.5px] text-muted-foreground tabular-nums">
+                                                            {count}
+                                                        </span>
+                                                    </Link>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        );
+                                    })}
 
+                                    {/* Add category shortcut */}
                                     <SidebarMenuSubItem>
-                                        <SidebarMenuSubButton
-                                            asChild
-                                            isActive={
-                                                pathname === "/lessons" &&
-                                                currentCategory === "ld"
-                                            }
-                                        >
+                                        <SidebarMenuSubButton asChild>
                                             <Link
-                                                href="/lessons?category=ld"
-                                                className="flex items-center gap-2 text-[13px]"
+                                                href="/settings/categories?new=true"
+                                                className="flex items-center gap-2 text-[12px] text-muted-foreground hover:text-foreground py-1"
+                                                title="Add new category"
                                             >
-                                                <span className="size-2 rounded-full bg-[hsl(var(--ld))] shrink-0" />
-                                                <span>Leadership</span>
-                                                <span className="ml-auto text-[11.5px] text-muted-foreground tabular-nums">
-                                                    {stats.ld}
-                                                </span>
+                                                <Plus className="size-3.5" />
+                                                <span>Add category</span>
                                             </Link>
                                         </SidebarMenuSubButton>
                                     </SidebarMenuSubItem>
@@ -328,6 +305,12 @@ export function AppSidebar() {
                                     <Link href="/settings/templates" className="flex items-center gap-2 cursor-pointer text-xs">
                                         <FileType2 className="size-3.5" />
                                         <span>Templates</span>
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/settings/categories" className="flex items-center gap-2 cursor-pointer text-xs">
+                                        <Tags className="size-3.5" />
+                                        <span>Categories</span>
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />

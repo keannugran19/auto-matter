@@ -198,6 +198,11 @@ def test_job_processing_and_download(client):
     assert res_dl.status_code == 200
     assert "application/vnd.openxmlformats" in res_dl.headers.get("content-type", "")
 
+    # Download original
+    res_orig = client.get(f"/api/jobs/{job_id}/original")
+    assert res_orig.status_code == 200
+    assert "application/vnd.openxmlformats" in res_orig.headers.get("content-type", "")
+
     # Output file is a valid DOCX package
     dl_bytes = res_dl.content
     with io.BytesIO(dl_bytes) as buf:
@@ -221,6 +226,11 @@ def test_download_404_when_job_missing(client):
     assert res.status_code == 404
 
 
+def test_original_404_when_job_missing(client):
+    res = client.get("/api/jobs/missing-id/original")
+    assert res.status_code == 404
+
+
 def test_delete_404_when_job_missing(client):
     res = client.delete("/api/jobs/missing-id")
     assert res.status_code == 404
@@ -230,11 +240,7 @@ def test_delete_404_when_job_missing(client):
 # 5. Previews endpoint security & error handling
 # ===========================================================================
 
-def test_preview_invalid_side(client):
+def test_preview_endpoint_removed(client):
+    """Preview JPEG endpoint has been removed in favor of client-side react-doc-viewer."""
     res = client.get("/api/jobs/123/preview/middle/page-1.jpg")
-    assert res.status_code == 400
-
-
-def test_preview_path_traversal_blocked(client):
-    res = client.get("/api/jobs/123/preview/before/../../etc/passwd")
-    assert res.status_code in (400, 404)
+    assert res.status_code == 404

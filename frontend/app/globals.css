@@ -108,3 +108,176 @@
     font-feature-settings: "tnum";
   }
 }
+
+/* Document Viewer enhancements */
+.rdv-viewer-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.rdv-viewer-container #react-doc-viewer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: transparent !important;
+}
+
+.rdv-viewer-container .rdv-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: transparent !important;
+}
+
+/* Remove separate document title header bar */
+.rdv-viewer-container .rdv-header-bar {
+  display: none !important;
+}
+
+/* Style tool controls as the header bar */
+.rdv-viewer-container .rdv-pdf-controls {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  width: 100%;
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--card)) !important;
+  backdrop-filter: blur(8px);
+}
+
+.dark .rdv-viewer-container .rdv-pdf-controls {
+  background: hsl(var(--card)) !important;
+  border-bottom-color: hsl(var(--border));
+}
+
+/* Prevent scrolling inside viewer container */
+.rdv-viewer-container {
+  overflow: hidden !important;
+}
+
+/* Content wrapper & PDF single-page display */
+.rdv-viewer-container .rdv-pdf-content-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden !important;
+  width: 100% !important;
+}
+
+.rdv-viewer-container .rdv-pdf-main-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 8px !important;
+  width: 100% !important;
+}
+
+/* Fit PDF canvas and page to container */
+.rdv-viewer-container .rdv-pdf-document {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.rdv-viewer-container .rdv-pdf-page-wrapper {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.rdv-viewer-container .rdv-pdf-page-container {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.rdv-viewer-container .react-pdf__Page {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.rdv-viewer-container .react-pdf__Page canvas,
+.rdv-viewer-container .rdv-pdf-page-container canvas {
+  max-width: 100% !important;
+  max-height: calc(100% - 16px) !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+}
+
+/* DOCX Viewer container & per-page fit */
+.rdv-viewer-container .rdv-common-content-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 12px 0 !important;
+}
+
+.rdv-viewer-container .rdv-docx-viewer {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  background: transparent !important;
+  overflow: visible !important;
+  contain: layout style;
+  will-change: transform;
+}
+
+.rdv-viewer-container .rdv-docx-viewer .rdv-docx {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+.rdv-viewer-container .rdv-docx-viewer .docx-wrapper,
+.rdv-viewer-container .rdv-docx-viewer .rdv-docx-wrapper {
+  background: transparent !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  overflow: visible !important;
+}
+
+.rdv-viewer-container .rdv-docx-viewer section.rdv-docx,
+.rdv-viewer-container .rdv-docx-viewer section.docx,
+.rdv-viewer-container .rdv-docx-viewer section {
+  margin: 0 auto !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+  border-radius: 4px !important;
+  box-sizing: border-box !important;
+  contain: layout style;
+}
+

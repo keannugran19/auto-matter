@@ -66,7 +66,7 @@ export default function ApiKeysPage() {
               </Badge>
             ) : (
               <Badge variant="outline" className="text-muted-foreground text-[11px]">
-                Not set (uses heuristics)
+                Not set (uses default)
               </Badge>
             )}
           </div>

@@ -36,13 +36,22 @@ import {
     DropdownMenuCheckboxItem,
     DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { DeleteLessonDialog } from "@/components/lessons/delete-lesson-dialog";
 import { Lesson, Category, CATEGORY_LABELS } from "@/lib/types";
+import { useCategories } from "@/lib/useCategories";
 
 export default function LessonsPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const categoryParam = searchParams.get("category");
+    const { categories } = useCategories();
 
     const [lessons, setLessons] = React.useState<Lesson[]>([]);
     const [loading, setLoading] = React.useState(true);
@@ -128,13 +137,19 @@ export default function LessonsPage() {
     // Statistics
     const stats = React.useMemo(() => {
         const total = lessons.length;
-        const nb = lessons.filter((l) => l.category === "new_believers").length;
-        const mt = lessons.filter((l) => l.category === "mentoring").length;
-        const ld = lessons.filter((l) => l.category === "leadership").length;
+        const categoryCounts: Record<string, number> = {};
+        for (const l of lessons) {
+            if (l.category) {
+                categoryCounts[l.category] = (categoryCounts[l.category] || 0) + 1;
+            }
+        }
+        const nb = categoryCounts["new_believers"] || 0;
+        const mt = categoryCounts["mentoring"] || 0;
+        const ld = categoryCounts["leadership"] || 0;
         const needsTransfer = lessons.filter(
             (l) => l.formatStatus === "needs_transfer",
         ).length;
-        return { total, nb, mt, ld, needsTransfer };
+        return { total, categoryCounts, nb, mt, ld, needsTransfer };
     }, [lessons]);
 
     // Filtered lessons
@@ -223,12 +238,8 @@ export default function LessonsPage() {
         setPage(1);
         if (cat === "all") {
             router.push("/lessons");
-        } else if (cat === "new_believers") {
-            router.push("/lessons?category=nb");
-        } else if (cat === "mentoring") {
-            router.push("/lessons?category=mt");
-        } else if (cat === "leadership") {
-            router.push("/lessons?category=ld");
+        } else {
+            router.push(`/lessons?category=${cat}`);
         }
     };
 
@@ -252,7 +263,7 @@ export default function LessonsPage() {
     };
 
     const openAddLesson = () => {
-        window.dispatchEvent(new CustomEvent("open-add-lesson"));
+        router.push("/workstation");
     };
 
     const openEditLesson = (lesson: Lesson) => {
@@ -348,7 +359,7 @@ export default function LessonsPage() {
                 </div>
             </div>
 
-            {/* 4 Stat Cards */}
+            {/* Stat Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
                 <Card className="p-4 shadow-sm">
                     <div className="flex items-center justify-between text-[13px] text-muted-foreground">
@@ -363,110 +374,64 @@ export default function LessonsPage() {
                     </div>
                 </Card>
 
-                <Card className="p-4 shadow-sm">
-                    <div className="flex items-center justify-between text-[13px] text-muted-foreground">
-                        <span>New Believers</span>
-                        <span className="size-2 rounded-full bg-[hsl(var(--nb))]" />
-                    </div>
-                    <div className="text-[26px] font-semibold tracking-tight tabular-nums mt-1 text-foreground">
-                        {stats.nb}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                        {stats.nb > 0 ? `${stats.nb} lesson${stats.nb === 1 ? "" : "s"}` : "No lessons"}
-                    </div>
-                </Card>
-
-                <Card className="p-4 shadow-sm">
-                    <div className="flex items-center justify-between text-[13px] text-muted-foreground">
-                        <span>Mentoring</span>
-                        <span className="size-2 rounded-full bg-[hsl(var(--mt))]" />
-                    </div>
-                    <div className="text-[26px] font-semibold tracking-tight tabular-nums mt-1 text-foreground">
-                        {stats.mt}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                        {stats.mt > 0 ? `${stats.mt} lesson${stats.mt === 1 ? "" : "s"}` : "No lessons"}
-                    </div>
-                </Card>
-
-                <Card className="p-4 shadow-sm">
-                    <div className="flex items-center justify-between text-[13px] text-muted-foreground">
-                        <span>Leadership</span>
-                        <span className="size-2 rounded-full bg-[hsl(var(--ld))]" />
-                    </div>
-                    <div className="text-[26px] font-semibold tracking-tight tabular-nums mt-1 text-foreground">
-                        {stats.ld}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                        {stats.needsTransfer > 0
-                            ? `${stats.needsTransfer} need format transfer`
-                            : "All up to date"}
-                    </div>
-                </Card>
+                {categories.slice(0, 3).map((c) => {
+                    const count = stats.categoryCounts[c.slug] ?? c.count ?? 0;
+                    return (
+                        <Card key={c.slug} className="p-4 shadow-sm">
+                            <div className="flex items-center justify-between text-[13px] text-muted-foreground">
+                                <span className="truncate">{c.name}</span>
+                                <span
+                                    className="size-2 rounded-full shrink-0 shadow-2xs"
+                                    style={{ backgroundColor: c.color }}
+                                />
+                            </div>
+                            <div className="text-[26px] font-semibold tracking-tight tabular-nums mt-1 text-foreground">
+                                {count}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                                {count > 0 ? `${count} lesson${count === 1 ? "" : "s"}` : "No lessons"}
+                            </div>
+                        </Card>
+                    );
+                })}
             </div>
 
             {/* Main Card with Data Table */}
             <Card className="shadow-sm overflow-hidden border border-border">
                 {/* Toolbar */}
                 <div className="flex flex-wrap items-center gap-2.5 p-3.5 border-b border-border bg-card">
-                    {/* Category Tabs */}
-                    <div className="inline-flex items-center bg-muted p-0.5 rounded-md text-xs font-medium">
-                        <button
-                            onClick={() => handleCategoryTab("all")}
-                            className={`h-7 px-3 rounded-[5px] inline-flex items-center gap-1.5 transition-all cursor-pointer ${
-                                activeCategory === "all"
-                                    ? "bg-background text-foreground shadow-sm font-semibold"
-                                    : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                            <span>All</span>
-                            <span className="text-[11px] opacity-75 tabular-nums">
-                                {stats.total}
-                            </span>
-                        </button>
-                        <button
-                            onClick={() => handleCategoryTab("new_believers")}
-                            className={`h-7 px-3 rounded-[5px] inline-flex items-center gap-1.5 transition-all cursor-pointer ${
-                                activeCategory === "new_believers"
-                                    ? "bg-background text-foreground shadow-sm font-semibold"
-                                    : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                            <span className="size-2 rounded-full bg-[hsl(var(--nb))]" />
-                            <span>New Believers</span>
-                            <span className="text-[11px] opacity-75 tabular-nums">
-                                {stats.nb}
-                            </span>
-                        </button>
-                        <button
-                            onClick={() => handleCategoryTab("mentoring")}
-                            className={`h-7 px-3 rounded-[5px] inline-flex items-center gap-1.5 transition-all cursor-pointer ${
-                                activeCategory === "mentoring"
-                                    ? "bg-background text-foreground shadow-sm font-semibold"
-                                    : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                            <span className="size-2 rounded-full bg-[hsl(var(--mt))]" />
-                            <span>Mentoring</span>
-                            <span className="text-[11px] opacity-75 tabular-nums">
-                                {stats.mt}
-                            </span>
-                        </button>
-                        <button
-                            onClick={() => handleCategoryTab("leadership")}
-                            className={`h-7 px-3 rounded-[5px] inline-flex items-center gap-1.5 transition-all cursor-pointer ${
-                                activeCategory === "leadership"
-                                    ? "bg-background text-foreground shadow-sm font-semibold"
-                                    : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                            <span className="size-2 rounded-full bg-[hsl(var(--ld))]" />
-                            <span>Leadership</span>
-                            <span className="text-[11px] opacity-75 tabular-nums">
-                                {stats.ld}
-                            </span>
-                        </button>
-                    </div>
+                    {/* Category Filter */}
+                    <Select value={activeCategory} onValueChange={handleCategoryTab}>
+                        <SelectTrigger className="h-8 text-xs w-[190px] bg-background">
+                            <SelectValue placeholder="All categories" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">
+                                <div className="flex items-center justify-between w-full gap-2">
+                                    <span>All categories</span>
+                                    <span className="text-[11px] text-muted-foreground tabular-nums">
+                                        ({stats.total})
+                                    </span>
+                                </div>
+                            </SelectItem>
+                            {categories.map((cat) => (
+                                <SelectItem key={cat.slug} value={cat.slug}>
+                                    <div className="flex items-center justify-between w-full gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className="size-2 rounded-full shrink-0 shadow-2xs"
+                                                style={{ backgroundColor: cat.color }}
+                                            />
+                                            <span>{cat.name}</span>
+                                        </div>
+                                        <span className="text-[11px] text-muted-foreground tabular-nums">
+                                            ({stats.categoryCounts[cat.slug] ?? cat.count ?? 0})
+                                        </span>
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
 
                     {/* Search Filter */}
                     <div className="w-64">
@@ -814,21 +779,19 @@ export default function LessonsPage() {
 
                                             {columnVisibility.category && (
                                                 <td className="px-3.5 py-2.5">
-                                                    <span
-                                                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium text-white shadow-xs ${
-                                                            lesson.category ===
-                                                            "new_believers"
-                                                                ? "bg-emerald-500/80 dark:bg-emerald-600/80"
-                                                                : lesson.category ===
-                                                                    "mentoring"
-                                                                  ? "bg-amber-500/85 dark:bg-amber-600/80"
-                                                                  : "bg-violet-500/80 dark:bg-violet-600/80"
-                                                        }`}
-                                                    >
-                                                        {CATEGORY_LABELS[
-                                                            lesson.category
-                                                        ] || lesson.category}
-                                                    </span>
+                                                    {(() => {
+                                                        const catObj = categories.find((c) => c.slug === lesson.category);
+                                                        const catColor = catObj?.color || "#6b7280";
+                                                        const catLabel = catObj?.name || CATEGORY_LABELS[lesson.category] || lesson.category;
+                                                        return (
+                                                            <span
+                                                                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium text-white shadow-xs"
+                                                                style={{ backgroundColor: catColor }}
+                                                            >
+                                                                {catLabel}
+                                                            </span>
+                                                        );
+                                                    })()}
                                                 </td>
                                             )}
 

@@ -16,6 +16,7 @@ export async function POST(
 
     const run = await getRunById(runId);
     const updated = await updateLesson(id, {
+      status: "published",
       formatStatus: "formatted",
       latestRunId: runId,
       formattedDocxUrl: `/api/jobs/${runId}/download`,

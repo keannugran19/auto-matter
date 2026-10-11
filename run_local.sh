@@ -31,7 +31,7 @@ fuser -k 3000/tcp 2>/dev/null || true
 
 # 2. Start FastAPI Backend on Port 8000
 echo "--> Starting Backend on http://localhost:8000..."
-$PYTHON -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 &
+$PYTHON -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload &
 BACKEND_PID=$!
 
 # Ensure backend process is terminated when this script exits

@@ -67,6 +67,9 @@ function rowToRun(row: Record<string, any>): TransferRun {
     roleMap: row.role_map ?? [],
     durationMs: row.duration_ms ?? 0,
     createdAt: row.created_at,
+    previews: row.previews ?? undefined,
+    downloadUrl: row.download_url ?? undefined,
+    error: row.error ?? undefined,
   };
 }
 
@@ -332,6 +335,32 @@ export async function createRun(input: Partial<TransferRun>): Promise<TransferRu
     .single();
   if (error) throw new Error(error.message);
   return rowToRun(data);
+}
+
+export async function updateRun(
+  id: string,
+  patch: Partial<TransferRun>
+): Promise<TransferRun | null> {
+  const db = createServiceClient();
+  const row: Record<string, any> = {};
+  if (patch.status !== undefined) row.status = patch.status;
+  if (patch.stats !== undefined) row.stats = patch.stats;
+  if (patch.warnings !== undefined) row.warnings = patch.warnings;
+  if (patch.roleMap !== undefined) row.role_map = patch.roleMap;
+  if (patch.durationMs !== undefined) row.duration_ms = patch.durationMs;
+  if (patch.classifier !== undefined) row.classifier = patch.classifier;
+
+  const { data, error } = await db
+    .from("transfer_runs")
+    .update(row)
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+  if (error) {
+    console.error("Failed to update run in DB:", error.message);
+    return null;
+  }
+  return data ? rowToRun(data) : null;
 }
 
 /** No-op — kept for API compatibility */

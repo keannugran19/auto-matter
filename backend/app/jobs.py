@@ -33,7 +33,6 @@ from .ooxml.restyle import restyle
 from .classify.taxonomy import Role
 from .classify.fallback import classify as fallback_classify
 from .classify.llm import classify_both, MissingApiKeyError, LLMClassificationError
-from .render import render_docx, is_available as lo_available
 
 
 # ---------------------------------------------------------------------------
@@ -211,27 +210,9 @@ def _run_job_sync(
         out_path = os.path.join(job_dir, "output.docx")
         restyle(target_pkg, derived, tgt_roles, out_path, ref_pkg=ref_pkg)
 
-        # --- 6. Render previews ---
-        previews: dict[str, list[str]] = {"before": [], "after": []}
-        if lo_available():
-            before_dir = os.path.join(job_dir, "before")
-            after_dir  = os.path.join(job_dir, "after")
-            os.makedirs(before_dir, exist_ok=True)
-            os.makedirs(after_dir, exist_ok=True)
-            before_files = render_docx(target_path, before_dir)
-            after_files  = render_docx(out_path, after_dir)
-            previews["before"] = [
-                f"/api/jobs/{job_id}/preview/before/{os.path.basename(p)}"
-                for p in before_files
-            ]
-            previews["after"] = [
-                f"/api/jobs/{job_id}/preview/after/{os.path.basename(p)}"
-                for p in after_files
-            ]
-
-        # --- 7. Update job ---
+        # --- 6. Update job ---
         job.report        = _build_report(derived, tgt_roles, classifier)
-        job.previews      = previews
+        job.previews      = None
         job.download_path = out_path
         job.status        = "done"
 
